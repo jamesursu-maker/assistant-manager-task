@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Asst. Manager – Project Task Manager V15 – Phase 3 | Daily Time History Fixed</title>
+<title>Asst. Manager – Project Task Manager V15 | Daily Time History</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f4f6f8;color:#17212b}
@@ -40,7 +40,7 @@ button.primary{background:#17365d;color:#fff;border:0;border-radius:8px;padding:
 .calWeek div{text-align:center;font-weight:bold;color:#687582;font-size:10px}
 .calDay{min-height:34px;border:1px solid #e5eaf0;border-radius:6px;padding:4px;text-align:center;position:relative;background:#fff}
 .calDay.muted{opacity:.35}.calDay.activeDay{background:#dff4e5;border-color:#78bf8b;font-weight:bold}
-.calDay.leaveDay{background:#fff0c7;border-color:#e2b84f}.calDay.todayDay{outline:2px solid #17365d}
+.calDay.leaveDay{background:#fff0c7;border-color:#e2b84f}.calDay.weeklyOffDay{background:#eef2f7;border-color:#9aa7b5}.calDay.weeklyOffDay .calDot{display:block;font-size:10px;margin-top:2px}.calDay.todayDay{outline:2px solid #17365d}
 .calDot{display:block;font-size:9px;color:#17365d;margin-top:1px}.calLegend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;color:#586674}
 .calStat{margin-top:8px;padding:8px;background:#f4f6f8;border-radius:8px;display:flex;justify-content:space-between;gap:8px}
 .leaveBadge{float:right;min-width:22px;text-align:center;border-radius:12px;padding:2px 6px;background:#fff0c7;color:#7a5a00;font-weight:bold}
@@ -66,6 +66,14 @@ button.primary{background:#17365d;color:#fff;border:0;border-radius:8px;padding:
 </style>
 
 
+<style id="pick-to-hide-v1">
+  #pendingList .pickhide-btn{border:1px solid #cbd5e1;background:#f8fafc}
+</style>
+<style id="inbox-add-work-v1">
+  #inboxFormWrap{display:none}
+  .calDay{cursor:pointer}
+  .calDay:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.10)}
+</style>
 <style id="inbox-edit-v6">
   #pendingList .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
   #pendingList .secondary.smallbtn{border:1px solid #d8d3f0}
@@ -103,6 +111,18 @@ button.primary{background:#17365d;color:#fff;border:0;border-radius:8px;padding:
 .p3-mobile-preview .task{margin-bottom:8px}
 @media(max-width:900px){.phase3-grid{grid-template-columns:1fr}}
 </style>
+
+<style id="phase4-style">
+.phase4-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:12px 0}
+.p4-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:16px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(15,23,42,.05)}
+.p4-icon{font-size:28px}.p4-card h3{margin:0 0 5px;font-size:14px}.p4-value{font-size:26px;font-weight:800;color:#17365d}
+.p4-perm-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.p4-perm-row{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;font-weight:700}
+.p4-perm-row input{width:20px;height:20px}.p4-category-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:9px;margin-top:8px;background:#fff}
+@media(max-width:900px){.phase4-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.phase4-grid,.p4-perm-grid{grid-template-columns:1fr}.p4-card{padding:13px}}
+</style>
+<style id="assign-work-ui-v1">
+#assignWorkFormWrap.hidden{display:none!important}
+</style>
 </head>
 <body>
 <header class="appHeader">
@@ -136,7 +156,8 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 <button onclick="showTab('completedForm',this)">✅ Completed Task Form</button>
 <button onclick="showTab('reminders',this)">📞 Reminders</button><button onclick="showTab('leave',this)">🏖️ Leave</button>
 <button onclick="showTab('tasks',this)">📚 All Tasks</button>
-<button onclick="showTab('report',this)">📊 Reports</button><button onclick="showTab('phase3',this)">⚙️ Phase 3</button>
+<button onclick="showTab('report',this)">📊 Reports</button>
+
 <button onclick="showTab('backup',this)">💾 Backup / Restore</button>
 <button onclick="logout()">Logout</button>
 </nav>
@@ -166,7 +187,7 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 <div class="kpi"><b id="kPending">0</b><span>Pending Work</span></div>
 <div class="kpi"><b id="kRem">0</b><span>Today's Reminders</span></div>
 </div>
-<div class="card"><h3>📈 Work Analytics</h3><div class="phase2-grid">
+<div class="card"><h3>📈 Dashboard Analytics</h3><div class="phase2-grid">
 <div class="phase2-stat"><b id="anaTotal">0</b><span>Total Works</span></div>
 <div class="phase2-stat"><b id="anaCompletion">0%</b><span>Completion Rate</span></div>
 <div class="phase2-stat"><b id="anaRevisions">0</b><span>Revisions / Rework</span></div>
@@ -184,8 +205,15 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 <section id="inbox" class="hidden">
 <div class="card">
 <h2>📥 Work Inbox / Assigned Work</h2>
-<div class="info">Enter work given by someone here. It stays Pending until you pick/start it.</div>
+<div class="info">Pending assigned work will appear below. To enter a new assignment, click the <b>➕ Assign Work</b> button.</div>
+<div class="actions" style="margin:12px 0 14px;display:flex!important;visibility:visible!important;opacity:1!important">
+  <button type="button" class="primary" id="assignWorkBtn" onclick="openAssignWorkForm()" style="display:inline-flex!important;visibility:visible!important;opacity:1!important">➕ Assign Work</button>
+</div>
+<div id="inboxFormWrap">
+
+<div id="assignWorkFormWrap" class="hidden">
 <form id="inboxForm">
+
 <div class="grid">
 <div><label>Received Date</label><input type="date" id="wReceived" required></div>
 <div><label>Given By</label><input id="wGivenBy" placeholder="Manager / Person name" required></div>
@@ -207,9 +235,10 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 <div><label>Due Date</label><input type="date" id="wDue"></div>
 </div>
 <div style="margin-top:10px"><label>Work Details</label><textarea id="wDetails" placeholder="What work was given?"></textarea></div>
-<div class="actions"><button class="primary">Add to Pending Work</button><button type="button" class="secondary" onclick="clearInboxForm()">Clear</button></div>
+<div class="actions"><button class="primary">Assign Work</button><button type="button" class="secondary" onclick="clearInboxForm()">Clear</button><button type="button" class="secondary" onclick="closeAssignWorkForm()">Cancel</button></div>
 <div id="inboxMsg"></div>
 </form>
+</div>
 </div>
 <div class="card"><h3>Pending Work</h3><div class="toolbar"><input id="inboxSearch" placeholder="🔎 Search project, given by, category..." oninput="renderInbox()"></div><div id="pendingList"></div></div>
 </section>
@@ -317,7 +346,6 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 <div><label>Unit</label><select id="cFilterUnit" onchange="renderCompletedTasks()"><option>All</option><option>Tirunelveli Unit</option><option>Madurai Unit</option><option>Namakkal Unit</option><option>Karaikal Unit</option><option>Pollachi Unit</option><option>Mattaparai Unit</option><option>Salem Unit</option><option>Alangudi Unit</option><option>Head Office</option><option>Manalur Unit</option><option>Other Units</option></select></div>
 </div><div id="completedTaskList"></div></div>
 </section>
-
 <section id="tasks" class="hidden"><div class="card"><h2>Task List</h2><div class="grid"><div><label>Start Date</label><input type="date" id="filterDate" onchange="renderTasks()"></div><div><label>Unit</label><select id="filterUnit" onchange="renderTasks()"><option>All</option><option>Tirunelveli Unit</option><option>Madurai Unit</option><option>Namakkal Unit</option><option>Karaikal Unit</option><option>Pollachi Unit</option><option>Mattaparai Unit</option><option>Salem Unit</option><option>Alangudi Unit</option><option>Head Office</option><option>Manalur Unit</option><option>Other Units</option></select></div></div><div id="allTasks"></div></div></section>
 
 
@@ -395,6 +423,62 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
   </div>
 </section>
 
+
+<section id="phase4" class="hidden">
+  <div class="card">
+    <h2>🚀 Phase 4 – Analytics, Complete Backup & Controls</h2>
+    <div class="info">Dashboard analytics, complete data backup, user permission controls and Work Category Manager.</div>
+  </div>
+
+  <div class="phase4-grid">
+    <div class="p4-card">
+      <div class="p4-icon">📊</div><div><h3>Total Works</h3><div id="p4Total" class="p4-value">0</div></div>
+    </div>
+    <div class="p4-card">
+      <div class="p4-icon">✅</div><div><h3>Completion %</h3><div id="p4Completion" class="p4-value">0%</div></div>
+    </div>
+    <div class="p4-card">
+      <div class="p4-icon">🔄</div><div><h3>Revision / Rework</h3><div id="p4Rework" class="p4-value">0</div></div>
+    </div>
+    <div class="p4-card">
+      <div class="p4-icon">⏱️</div><div><h3>Logged Working Hours</h3><div id="p4Hours" class="p4-value">0h 0m</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>💾 Complete Backup</h3>
+    <p class="small">Backup includes Tasks, Reminders, Leave data, Daily Time History, Categories and Permissions.</p>
+    <div class="actions">
+      <button class="primary" type="button" onclick="phase4CreateBackup()">⬇️ Create Complete Backup</button>
+      <button class="secondary" type="button" onclick="document.getElementById('p4RestoreFile').click()">⬆️ Restore Complete Backup</button>
+      <input id="p4RestoreFile" type="file" accept=".json,application/json" hidden onchange="phase4RestoreBackup(this)">
+    </div>
+    <div id="p4BackupMsg"></div>
+  </div>
+
+  <div class="card">
+    <h3>🛡️ User Permission Controls</h3>
+    <p class="small">Turn each permission ON or OFF. Changes apply immediately in this Task Manager browser for the signed-in user.</p>
+    <div class="p4-perm-grid">
+      <label class="p4-perm-row"><span>📥 Work Inbox</span><input type="checkbox" id="p4PermInbox" checked></label>
+      <label class="p4-perm-row"><span>📋 My Work Update</span><input type="checkbox" id="p4PermMyWork" checked></label>
+      <label class="p4-perm-row"><span>✅ Complete Work</span><input type="checkbox" id="p4PermComplete" checked></label>
+      <label class="p4-perm-row"><span>📊 Reports</span><input type="checkbox" id="p4PermReports" checked></label>
+    </div>
+    <div id="p4PermMsg"></div>
+  </div>
+
+  <div class="card">
+    <h3>🗂️ Work Category Manager</h3>
+    <p class="small">Add or delete custom Work Categories for future use. Existing standard categories remain available.</p>
+    <div class="grid">
+      <div><label>New Work Category / Sub Category</label><input id="p4CategoryName" placeholder="e.g. Inspection / Audit"></div>
+      <div><label>&nbsp;</label><button class="primary" type="button" onclick="phase4AddCategory()">➕ Add Category</button></div>
+    </div>
+    <div id="p4CategoryList"></div>
+  </div>
+</section>
+
 <section id="backup" class="hidden">
 <div class="card">
 <h2>💾 Data Backup / Restore</h2>
@@ -468,6 +552,7 @@ function showTab(id,btn){
   if(id==='completedForm'){populateCompletedMyWork();renderCompletedTasks();}
   if(id==='reminders')renderReminders();
   if(id==='leave')renderLeaves();
+  if(id==='attendance')renderAttendance();
   if(id==='backup')renderBackupInfo();
 }
 async function loadAll(){await loadTasks();await loadReminders();await loadLeaves();populateRelatedWork();renderDashboard();renderInbox();renderMyWork();renderReminders();renderLeaves();populateCompletedMyWork();renderCompletedTasks()}
@@ -552,7 +637,65 @@ function renderDashboard(){
   renderCalendar();renderPhase2Analytics();
 }
 
-function renderInbox(){const q=($('inboxSearch')?.value||'').trim();const a=tasks.filter(t=>t.workflow_status==='Pending Assignment'&&taskSearchMatch(t,q));$('pendingList').innerHTML=a.length?a.map(t=>`<div class="task"><h3>${esc(t.project)} ${priorityBadge(t.priority)} ${revisionBadge(t.revision_no??0)} ${dueBadge(t)}</h3><div class="meta"><b>${esc(t.unit)}</b> • Received: ${t.received_date||t.start_date}<br>Given By: ${esc(t.assigned_by||'-')}<br>Category: ${esc(t.category)}${t.work_sub_category?' • Sub Category: '+esc(t.work_sub_category):''}<br>Due: ${esc(t.due_date||'-')}<br>Details: ${esc(t.work_details||'-')}</div><div class="actions"><button class="primary smallbtn" onclick="pickWork('${t.id}')">▶️ Pick / Start Work</button><button class="secondary smallbtn" onclick="editInboxWork('${t.id}')">✏️ Edit</button></div></div>`).join(''):'<p>No pending assigned work matching your search.</p>'}
+function refreshPickToHideSelect(){
+  const s=$('pickToHideSelect');
+  if(!s)return;
+  const current=s.value;
+  const a=tasks.filter(t=>t.workflow_status==='Pending Assignment');
+  s.innerHTML='<option value="">Select a pending work</option>'+a.map(t=>`<option value="${t.id}">${esc(t.project||'Untitled Work')} — ${esc(t.assigned_by||'Unknown')} — ${esc(t.unit||'')}</option>`).join('');
+  if(a.some(t=>t.id===current))s.value=current;
+}
+async function pickSelectedInboxToHide(){
+  const s=$('pickToHideSelect');
+  const msg=$('pickToHideMsg');
+  const id=s?.value;
+  if(!id){if(msg)msg.innerHTML='<div class="error">Please select a pending work first.</div>';return;}
+  const t=tasks.find(x=>x.id===id);
+  if(!t)return;
+  if(!confirm(`Pick "${t.project}" and hide it from Work Inbox? You can update/fill it later in My Work.`))return;
+  const r=await sb.from('tasks').update({
+    workflow_status:'Picked',
+    status:t.status==='Pending'?'Pending':t.status,
+    picked_at:new Date().toISOString(),
+    start_date:t.start_date||today,
+    updated_at:new Date().toISOString()
+  }).eq('id',id);
+  if(r.error){if(msg)msg.innerHTML='<div class="error">'+esc(r.error.message)+'</div>';return;}
+  await loadTasks();
+  refreshPickToHideSelect();
+  renderInbox();
+  renderMyWork();
+  renderDashboard();
+  if(msg)msg.innerHTML='<div class="success">Work picked and hidden from Work Inbox. It is now available in My Work for later update.</div>';
+  document.querySelector('[data-section="mywork"]')?.click();
+}
+
+function openAssignWorkForm(prefillDate){
+  const outer=$('inboxFormWrap');
+  const wrap=$('assignWorkFormWrap');
+  if(!wrap)return;
+  // The form is inside inboxFormWrap, which is hidden by default.
+  // Open both containers so the Assign Work form is actually visible.
+  if(outer) outer.style.display='block';
+  wrap.classList.remove('hidden');
+  wrap.style.display='block';
+  const dateEl=$('wReceived')||$('wReceivedDate')||$('receivedDate')||$('wDate');
+  if(prefillDate && dateEl) dateEl.value=prefillDate;
+  else if(dateEl && !dateEl.value) dateEl.value=today;
+  const btn=$('assignWorkBtn'); if(btn){btn.classList.add('hidden');btn.style.display='none';}
+  const first=wrap.querySelector('input,select,textarea'); if(first)first.focus();
+  wrap.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function closeAssignWorkForm(){
+  const wrap=$('assignWorkFormWrap');
+  if(!wrap)return;
+  wrap.classList.add('hidden');
+  wrap.style.display='none';
+  const outer=$('inboxFormWrap'); if(outer) outer.style.display='none';
+  const btn=$('assignWorkBtn'); if(btn){btn.classList.remove('hidden');btn.style.display='inline-flex';}
+  clearInboxForm();
+}
+function renderInbox(){const q=($('inboxSearch')?.value||'').trim();const a=tasks.filter(t=>t.workflow_status==='Pending Assignment'&&taskSearchMatch(t,q));$('pendingList').innerHTML=a.length?a.map(t=>`<div class="task"><h3>${esc(t.project)} ${priorityBadge(t.priority)} ${revisionBadge(t.revision_no??0)} ${dueBadge(t)}</h3><div class="meta"><b>${esc(t.unit)}</b> • Received: ${t.received_date||t.start_date}<br>Given By: ${esc(t.assigned_by||'-')}<br>Category: ${esc(t.category)}${t.work_sub_category?' • Sub Category: '+esc(t.work_sub_category):''}<br>Due: ${esc(t.due_date||'-')}<br>Details: ${esc(t.work_details||'-')}</div><div class="actions"><button class="primary smallbtn" onclick="pickWork('${t.id}')">▶️ Pick / Start Work</button><button class="secondary smallbtn pickhide-btn" onclick="pickWork('${t.id}')" title="Pick this work and hide it from Work Inbox">📥 Pick to Hide</button><button class="secondary smallbtn" onclick="editInboxWork('${t.id}')">✏️ Edit</button></div></div>`).join(''):'<p>No pending assigned work matching your search.</p>'}
 
 function renderMyWork(){const q=($('myWorkSearch')?.value||'').trim();const df=$('myWorkDueFilter')?.value||'All';const a=tasks.filter(t=>{if(!((t.workflow_status==='Picked'||t.workflow_status==='Working')&&t.status!=='Completed'))return false;if(!taskSearchMatch(t,q))return false;return df==='All'||dueState(t).key===df});$('myWorkList').innerHTML=a.length?a.map(t=>`<div class="task"><h3>${esc(t.project)} ${revisionBadge(t.revision_no??0)} ${badge(t.status)} ${dueBadge(t)}</h3><div class="meta"><b>${esc(t.unit)}</b> • First Date: ${esc(t.start_date||'-')}<br>Given By: ${esc(t.assigned_by||'-')} • Priority: ${esc(t.priority||'-')}<br>Workflow: ${esc(t.workflow_status||'-')} • Due: ${esc(t.due_date||'-')}<br>⏱️ Total Logged: <b>${formatMinutes(taskHours(t))}</b><br>${esc(t.actual_activity||t.work_details||'-')}</div><div class="actions">${t.workflow_status==='Picked'?`<button class="primary smallbtn" onclick="startPicked('${t.id}')">▶ Start</button>`:''}<button class="primary smallbtn" onclick="openTaskFromWork('${t.id}')">✏️ Update Work</button><button class="secondary smallbtn" onclick="deleteMyWork('${t.id}')">🗑️ Delete</button><button class="secondary smallbtn" onclick="sendBackToInbox('${t.id}')">↩️ Send Back to Work Inbox</button></div></div>`).join(''):'<p>No active work matching the selected filter.</p>'}
 
@@ -604,12 +747,29 @@ async function startPicked(id){
 function openTaskFromWork(id){editTask(id)}
 let editingInboxTaskId=null;
 
+function openInboxAddForm(dateValue){
+  const wrap=$('inboxFormWrap');
+  if(wrap)wrap.style.display='block';
+  const d=dateValue||$('wReceived')?.value||today;
+  if($('wReceived'))$('wReceived').value=d;
+  $('inboxMsg').innerHTML='';
+  setTimeout(()=>{ $('wGivenBy')?.focus(); wrap?.scrollIntoView({behavior:'smooth',block:'start'}); },50);
+}
+function closeInboxAddForm(){
+  const wrap=$('inboxFormWrap');
+  if(wrap)wrap.style.display='none';
+  clearInboxForm();
+}
+function addWorkFromCalendar(dateValue){
+  showTab('inbox',document.querySelector('[onclick*="showTab(\'inbox\'"]'));
+  openInboxAddForm(dateValue);
+}
 function clearInboxForm(){
   editingInboxTaskId=null;
   $('inboxForm').reset();
   $('wReceived').value=today;
   const btn=$('inboxForm').querySelector('button.primary');
-  if(btn)btn.textContent='Add to Pending Work';
+  if(btn)btn.textContent='Assign Work';
 }
 
 function editInboxWork(id){
@@ -679,6 +839,7 @@ $('inboxForm').onsubmit=async e=>{
   await loadTasks();
   renderInbox();
   renderDashboard();
+  closeInboxAddForm();
 }
 
 const DAILY_TIME_KEY='task_daily_time_history_v2';
@@ -943,7 +1104,8 @@ function renderTasks(){const d=$('filterDate').value,u=$('filterUnit').value,q=(
 
 function generateReport(){const f=$('from')?.value||'0000-01-01',to=$('to')?.value||'9999-12-31',unit=$('reportUnit')?.value||'All',status=$('reportStatus')?.value||'All';const a=tasks.filter(t=>String(t.start_date||'')>=f&&String(t.start_date||'')<=to&&(unit==='All'||t.unit===unit)&&(status==='All'||t.status===status));const totalMin=a.reduce((n,t)=>n+taskHours(t),0);const rows=a.map(t=>`<tr><td>${esc(t.project)}</td><td>${esc(t.unit||'-')}</td><td>${esc(t.start_date||'-')}</td><td>${esc(t.due_date||'-')}</td><td>${esc(t.status||'-')}</td><td>${esc(t.category||'-')}</td><td>${formatMinutes(taskHours(t))}</td></tr>`).join('');$('reportBox').innerHTML=`<div class="report-summary"><div><b>Total</b><br><span>${a.length}</span></div><div><b>Completed</b><br><span>${a.filter(t=>t.status==='Completed').length}</span></div><div><b>In Progress</b><br><span>${a.filter(t=>t.status==='In Progress').length}</span></div><div><b>Pending</b><br><span>${a.filter(t=>t.status==='Pending').length}</span></div><div><b>Overdue</b><br><span>${a.filter(t=>dueState(t).key==='Overdue'&&t.status!=='Completed').length}</span></div><div><b>Total Hours</b><br><span>${formatMinutes(totalMin)}</span></div></div><div class="report-filter-note"><b>Period:</b> ${esc(f)} to ${esc(to)} • <b>Unit:</b> ${esc(unit)} • <b>Status:</b> ${esc(status)}</div><table class="report-table"><thead><tr><th>Project / Work</th><th>Unit</th><th>Start Date</th><th>Due</th><th>Status</th><th>Category</th><th>Logged Time</th></tr></thead><tbody>${rows||'<tr><td colspan="7">No matching work found.</td></tr>'}</tbody></table>`}
 function clearReport(){$('from').value='';$('to').value='';$('reportUnit').value='All';$('reportStatus').value='All';$('reportBox').innerHTML='<p class="small">Select filters and click Generate Report.</p>'}
-function printReport(){const box=$('reportBox');if(!box||!box.innerText.trim()){msg('reportMsg','Generate the report first.','error');return}const w=window.open('','_blank','width=1100,height=800');if(!w){msg('reportMsg','Please allow pop-ups to print the report.','error');return}w.document.write('<html><head><title>Work Report</title><style>body{font-family:Arial;padding:24px}.report-table{width:100%;border-collapse:collapse}.report-table th,.report-table td{border:1px solid #ddd;padding:7px}.report-table th{background:#f5f5f5}</style></head><body><h1>📊 Work Report</h1>'+box.innerHTML+'</body></html>');w.document.close();w.focus();setTimeout(()=>w.print(),300)}
+function printReport(){const box=$('reportBox');if(!box||!box.innerText.trim()){msg('reportMsg','Generate the report first.','error');return}const w=window.open('','_blank','width=1100,height=800');if(!w){msg('reportMsg','Please allow pop-ups to print the report.','error');return}w.document.write(`<html><head><title>Work Report</title><style>body{font-family:Arial;padding:24px}.report-table{width:100%;border-collapse:collapse}.report-table th,.report-table td{border:1px solid #ddd;padding:7px}.report-table th{background:#f5f5f5}</style></head><body><h1>📊 Work Report</h1>${box.innerHTML}
+</body></html>`);w.document.close();w.focus();setTimeout(()=>w.print(),300)}
 async function loadRevisionTimeline(taskId){
   const box=$('revisionTimeline');if(!box)return;
   const root=tasks.find(t=>t.id===taskId);if(!root){box.innerHTML='<div class="small">No work selected.</div>';return}
@@ -1062,8 +1224,10 @@ function renderCalendar(){
     const iso=`${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
     const muted=dateObj.getMonth()!==calMonth;
     const isActive=activeDates.has(iso), isLeave=leaveDates.has(iso), isToday=iso===today;
-    let cls='calDay'+(muted?' muted':'')+(isActive?' activeDay':'')+(isLeave?' leaveDay':'')+(isToday?' todayDay':'');
-    s+=`<div class="${cls}">${dateObj.getDate()}${isActive?'<span class="calDot">Work</span>':''}${isLeave?'<span class="calDot">Leave</span>':''}</div>`;
+    const isSunday=dateObj.getDay()===0;
+    let cls='calDay'+(muted?' muted':'')+(isActive?' activeDay':'')+(isLeave?' leaveDay':'')+(isSunday?' weeklyOffDay':'')+(isToday?' todayDay':'');
+    const sundayLabel=isSunday?(isActive?'<span class="calDot">Sunday Work</span>':'<span class="calDot">Weekly Off</span>'):'';
+    s+=`<div class="${cls}" onclick="addWorkFromCalendar('${iso}')" title="Click to add work for ${iso}">${dateObj.getDate()}${isActive?'<span class="calDot">Work</span>':''}${isLeave?'<span class="calDot">Leave</span>':''}${sundayLabel}</div>`;
   }
   grid.innerHTML=s;
   $('activeDayCount').textContent=activeDates.size;
@@ -1231,6 +1395,122 @@ function getWorkSubCategory(){
   const el=document.getElementById('workSubCategory');
   return el ? el.value : '';
 }
+</script>
+
+<script id="phase4-script">
+(function(){
+  const P4_PERM_KEY='task_permissions_v2_'+(()=>{try{return (user&&user.id)||'guest'}catch(_){return 'guest'}})();
+  const P4_CAT_KEY='task_custom_categories_v2';
+  const p4ReadPerms=()=>{try{const p=JSON.parse(localStorage.getItem(P4_PERM_KEY)||'{}');return {Inbox:p.Inbox!==false,MyWork:p.MyWork!==false,Complete:p.Complete!==false,Reports:p.Reports!==false}}catch(_){return {Inbox:true,MyWork:true,Complete:true,Reports:true}}};
+  const p4SavePerms=p=>localStorage.setItem(P4_PERM_KEY,JSON.stringify(p));
+  window.phase4Can=function(k){return p4ReadPerms()[k]!==false};
+
+  function p4Categories(){
+    let a=[];try{a=JSON.parse(localStorage.getItem(P4_CAT_KEY)||'[]')}catch(_){}
+    return Array.isArray(a)?a:[];
+  }
+  function p4PopulateCategories(){
+    const custom=p4Categories();
+    ['category','wCategory'].forEach(id=>{
+      const el=document.getElementById(id);if(!el)return;
+      const old=el.value;
+      custom.forEach(x=>{if(![...el.options].some(o=>o.value===x))el.add(new Option(x,x));});
+      if([...el.options].some(o=>o.value===old))el.value=old;
+    });
+  }
+  window.phase4RenderCategories=function(){
+    const box=document.getElementById('p4CategoryList');if(!box)return;
+    const a=p4Categories();
+    box.innerHTML=a.length?a.map((x,i)=>`<div class="p4-category-row"><span>📁 ${esc(x)}</span><button type="button" class="secondary smallbtn" onclick="phase4DeleteCategory(${i})">🗑️ Delete</button></div>`).join(''):'<div class="small">No custom categories added yet.</div>';
+    p4PopulateCategories();
+  };
+  window.phase4AddCategory=function(){
+    const el=document.getElementById('p4CategoryName');const n=(el?.value||'').trim();if(!n)return;
+    const a=p4Categories();if(!a.includes(n))a.push(n);localStorage.setItem(P4_CAT_KEY,JSON.stringify(a));if(el)el.value='';phase4RenderCategories();msg('p4BackupMsg','Work Category added successfully.','ok');
+  };
+  window.phase4DeleteCategory=function(i){
+    const a=p4Categories();if(!a[i])return;if(!confirm('Delete this custom Work Category?'))return;a.splice(i,1);localStorage.setItem(P4_CAT_KEY,JSON.stringify(a));phase4RenderCategories();
+  };
+
+  function p4LoadPermissionUI(){
+    const p=p4ReadPerms();[['p4PermInbox','Inbox'],['p4PermMyWork','MyWork'],['p4PermComplete','Complete'],['p4PermReports','Reports']].forEach(([id,k])=>{const e=document.getElementById(id);if(e){e.checked=p[k]!==false;e.onchange=()=>{const n=p4ReadPerms();n[k]=e.checked;p4SavePerms(n);p4ApplyPermissions();msg('p4PermMsg','Permission updated successfully.','ok');}}});
+    p4ApplyPermissions();
+  }
+  function p4ApplyPermissions(){
+    const p=p4ReadPerms();
+    const map={Inbox:'inbox',MyWork:'mywork',Complete:'completedForm',Reports:'report'};
+    Object.entries(map).forEach(([k,id])=>{const btn=document.querySelector(`nav button[onclick*="'${id}'"]`);if(btn)btn.style.display=p[k]===false?'none':'';});
+    document.querySelectorAll('#inbox .actions button.primary').forEach(b=>b.disabled=p.Inbox===false);
+    document.querySelectorAll('#mywork .actions button').forEach(b=>b.disabled=p.MyWork===false);
+    document.querySelectorAll('#completedForm button.primary').forEach(b=>b.disabled=p.Complete===false);
+  }
+
+  async function p4TimeRows(){
+    const local=(()=>{try{return JSON.parse(localStorage.getItem('task_daily_time_history_v2')||'{}')}catch(_){return {}}})();
+    let cloud=[];
+    try{if(sb&&tasks.length){const ids=tasks.map(t=>t.id).filter(Boolean);if(ids.length){const r=await sb.from('work_time_logs').select('task_id,work_date,start_time,end_time').in('task_id',ids);if(!r.error)cloud=r.data||[];}}}catch(_){}
+    const merged={};
+    Object.entries(local||{}).forEach(([tid,rows])=>{merged[tid]=Array.isArray(rows)?rows.slice():[]});
+    cloud.forEach(x=>{if(!merged[x.task_id])merged[x.task_id]=[];const i=merged[x.task_id].findIndex(y=>y.work_date===x.work_date);if(i>=0)merged[x.task_id][i]=x;else merged[x.task_id].push(x);});
+    return merged;
+  }
+  window.phase4RefreshAnalytics=async function(){
+    const total=tasks.length,done=tasks.filter(t=>t.status==='Completed').length;
+    const rework=tasks.filter(t=>Number(t.revision_no||0)>0 || /rework|revision/i.test(String(t.revision_type||''))).length;
+    let mins=0;const hist=await p4TimeRows();Object.values(hist).forEach(rows=>(rows||[]).forEach(x=>{mins+=minutesBetween(x.start_time,x.end_time)}));
+    if(!mins)mins=tasks.reduce((n,t)=>n+taskHours(t),0);
+    const vals={p4Total:total,p4Completion:(total?Math.round(done*100/total):0)+'%',p4Rework:rework,p4Hours:formatMinutes(mins)};
+    Object.entries(vals).forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.textContent=v;});
+    // Keep Dashboard Analytics synchronized with the same calculations.
+    ['anaTotal','anaCompletion','anaRevisions','anaHours'].forEach(id=>{});
+  };
+
+  window.phase4CreateBackup=async function(){
+    if(!user){msg('p4BackupMsg','Please sign in first.','error');return;}
+    const hist=await p4TimeRows();let cloudTimeLogs=[];
+    try{if(sb&&tasks.length){const ids=tasks.map(t=>t.id).filter(Boolean);if(ids.length){const r=await sb.from('work_time_logs').select('*').in('task_id',ids);if(!r.error)cloudTimeLogs=r.data||[];}}}catch(_){}
+    const backup={app:'James R – Assistant Manager – Project Task Manager',version:'Phase-4',backup_date:new Date().toISOString(),account:user.email||'',tasks:tasks||[],reminders:reminders||[],leaves:leaves||[],daily_time_history:hist,work_time_logs:cloudTimeLogs,categories:p4Categories(),legacy_categories:(()=>{try{return JSON.parse(localStorage.getItem('task_custom_categories_v1')||'[]')}catch(_){return []}})(),permissions:p4ReadPerms()};
+    const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Assistant_Manager_Task_Manager_Phase4_Backup_'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);msg('p4BackupMsg','Complete Backup created successfully.','ok');
+  };
+
+  window.phase4RestoreBackup=async function(input){
+    const f=input.files?.[0];if(!f)return;if(!user){msg('p4BackupMsg','Please sign in first.','error');input.value='';return;}
+    try{
+      const d=JSON.parse(await f.text());if(!d||!Array.isArray(d.tasks)||!Array.isArray(d.reminders)||!Array.isArray(d.leaves))throw new Error('Invalid Task Manager backup file.');
+      if(!confirm('Restore this Complete Backup? Existing matching records may be updated; current records are not deleted.')){input.value='';return;}
+      const clean=o=>{const x={...o};delete x.created_at;x.created_by=user.id;return x};
+      let tc=0,rc=0,lc=0,wc=0;
+      if(d.tasks.length){const r=await sb.from('tasks').upsert(d.tasks.map(clean),{onConflict:'id'});if(r.error)throw r.error;tc=d.tasks.length;}
+      if(d.reminders.length){const r=await sb.from('work_reminders').upsert(d.reminders.map(clean),{onConflict:'id'});if(r.error)throw r.error;rc=d.reminders.length;}
+      if(d.leaves.length){const r=await sb.from('work_leaves').upsert(d.leaves.map(clean),{onConflict:'id'});if(r.error)throw r.error;lc=d.leaves.length;}
+      if(d.daily_time_history)localStorage.setItem('task_daily_time_history_v2',JSON.stringify(d.daily_time_history));
+      if(Array.isArray(d.categories))localStorage.setItem(P4_CAT_KEY,JSON.stringify(d.categories));
+      if(d.permissions&&typeof d.permissions==='object')p4SavePerms({Inbox:d.permissions.Inbox!==false,MyWork:d.permissions.MyWork!==false,Complete:d.permissions.Complete!==false,Reports:d.permissions.Reports!==false});
+      if(Array.isArray(d.work_time_logs)&&d.work_time_logs.length){try{const rows=d.work_time_logs.map(x=>{const y={...x};delete y.created_at;y.created_by=user.id;return y});const r=await sb.from('work_time_logs').upsert(rows,{onConflict:'id'});if(!r.error)wc=rows.length;}catch(_){} }
+      await loadAll();phase4RenderCategories();p4LoadPermissionUI();phase4RefreshAnalytics();msg('p4BackupMsg',`Restore completed: ${tc} Tasks, ${rc} Reminders, ${lc} Leave entries, ${wc} cloud time logs processed.`,'ok');
+    }catch(e){msg('p4BackupMsg','Restore failed: '+(e.message||e),'error');}finally{input.value='';}
+  };
+
+  // Gate navigation and key actions according to the Phase 4 permissions.
+  const oldShowTab=window.showTab;
+  window.showTab=function(id,btn){
+    const req={inbox:'Inbox',mywork:'MyWork',completedForm:'Complete',report:'Reports'}[id];
+    if(req&&!phase4Can(req)){alert('You do not have permission to open this option.');return;}
+    return oldShowTab(id,btn);
+  };
+  const guard=(name,key)=>{const old=window[name];if(typeof old!=='function')return;window[name]=function(...args){if(!phase4Can(key)){alert('You do not have permission for this action.');return;}return old.apply(this,args);};};
+  guard('pickWork','Inbox');guard('editInboxWork','Inbox');guard('deleteMyWork','MyWork');guard('openTaskFromWork','MyWork');guard('startPicked','MyWork');guard('sendBackToInbox','MyWork');guard('reworkCompletedTask','Complete');guard('editTask','MyWork');guard('generateReport','Reports');guard('printReport','Reports');
+
+  const oldOpenDashboard=window.openDashboard;
+  window.openDashboard=function(){const r=oldOpenDashboard.apply(this,arguments);setTimeout(()=>{p4LoadPermissionUI();phase4RenderCategories();phase4RefreshAnalytics();},300);return r;};
+  // Existing forms are additionally guarded.
+  setTimeout(()=>{
+    const f1=document.getElementById('inboxForm');if(f1&&f1.dataset.p4!=='1'){const old=f1.onsubmit;f1.onsubmit=async function(e){if(!phase4Can('Inbox')){e.preventDefault();alert('Work Inbox permission is OFF.');return;}return old?old.call(this,e):undefined};f1.dataset.p4='1';}
+    const f2=document.getElementById('taskForm');if(f2&&f2.dataset.p4!=='1'){const old=f2.onsubmit;f2.onsubmit=async function(e){if(!phase4Can('MyWork')){e.preventDefault();alert('My Work Update permission is OFF.');return;}return old?old.call(this,e):undefined};f2.dataset.p4='1';}
+    const f3=document.getElementById('completedTaskForm');if(f3&&f3.dataset.p4!=='1'){const old=f3.onsubmit;f3.onsubmit=async function(e){if(!phase4Can('Complete')){e.preventDefault();alert('Complete Work permission is OFF.');return;}return old?old.call(this,e):undefined};f3.dataset.p4='1';}
+    p4LoadPermissionUI();phase4RenderCategories();phase4RefreshAnalytics();
+  },800);
+})();
 </script>
 
 </body>
