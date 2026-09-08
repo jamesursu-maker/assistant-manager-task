@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Asst. Manager – Project Task Manager V15 | Daily Time History</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f4f6f8;color:#17212b}
 header{background:#17365d;color:#fff;padding:15px;position:sticky;top:0;z-index:5}header h1{margin:0;font-size:20px}header p{margin:4px 0 0;font-size:12px;opacity:.85}
@@ -157,6 +158,7 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 <button onclick="showTab('reminders',this)">📞 Reminders</button><button onclick="showTab('leave',this)">🏖️ Leave</button>
 <button onclick="showTab('tasks',this)">📚 All Tasks</button>
 <button onclick="showTab('report',this)">📊 Reports</button>
+<button onclick="showTab('unitVisit',this)">🚗 Unit Visit / Travel</button>
 
 <button onclick="showTab('backup',this)">💾 Backup / Restore</button>
 <button onclick="logout()">Logout</button>
@@ -169,7 +171,7 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 
 <section id="dashboard" class="hidden">
 <div class="dashboardTop">
-<div class="card"><div><h2>Today</h2><div id="todayDate"></div></div></div>
+<div class="card"><div><h2>Today</h2><div id="todayDate"></div><div id="todayInboxList" style="margin-top:18px"></div></div></div>
 <div class="card monthCalendar">
   <div class="calHead"><button onclick="changeMonth(-1)">‹</button><strong id="calMonthTitle">Month</strong><button onclick="changeMonth(1)">›</button></div>
   <div class="calWeek"><div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div></div>
@@ -344,7 +346,10 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 <div><label>From Date</label><input type="date" id="cFrom" onchange="renderCompletedTasks()"></div>
 <div><label>To Date</label><input type="date" id="cTo" onchange="renderCompletedTasks()"></div>
 <div><label>Unit</label><select id="cFilterUnit" onchange="renderCompletedTasks()"><option>All</option><option>Tirunelveli Unit</option><option>Madurai Unit</option><option>Namakkal Unit</option><option>Karaikal Unit</option><option>Pollachi Unit</option><option>Mattaparai Unit</option><option>Salem Unit</option><option>Alangudi Unit</option><option>Head Office</option><option>Manalur Unit</option><option>Other Units</option></select></div>
-</div><div id="completedTaskList"></div></div>
+</div>
+<div class="info" style="margin-top:10px"><b>📌 Completed Work Sub Category</b><br>Select the correct Sub Category for each completed work below and click <b>Save</b>. After assigning all Sub Categories, go to <b>Reports → Generate Report → Export Excel</b>.</div>
+<div class="actions" style="margin-top:10px"><button class="primary" type="button" onclick="saveAllCompletedSubCategories()">💾 Save All Sub Categories</button></div>
+<div id="completedTaskList"></div></div>
 </section>
 <section id="tasks" class="hidden"><div class="card"><h2>Task List</h2><div class="grid"><div><label>Start Date</label><input type="date" id="filterDate" onchange="renderTasks()"></div><div><label>Unit</label><select id="filterUnit" onchange="renderTasks()"><option>All</option><option>Tirunelveli Unit</option><option>Madurai Unit</option><option>Namakkal Unit</option><option>Karaikal Unit</option><option>Pollachi Unit</option><option>Mattaparai Unit</option><option>Salem Unit</option><option>Alangudi Unit</option><option>Head Office</option><option>Manalur Unit</option><option>Other Units</option></select></div></div><div id="allTasks"></div></div></section>
 
@@ -352,21 +357,30 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 <section id="report" class="hidden">
 <div class="card">
 <h2>📊 Work Reports</h2>
-<div class="info">Generate a report for any date range, unit and status.</div>
+<div class="info">Generate completed work reports separately by Work Sub Category. The Excel format follows the supplied Work Report.xlsx structure.</div>
 <div class="grid">
 <div><label>From Date</label><input type="date" id="from"></div>
 <div><label>To Date</label><input type="date" id="to"></div>
 <div><label>Unit</label><select id="reportUnit"><option>All</option><option>Tirunelveli Unit</option><option>Madurai Unit</option><option>Namakkal Unit</option><option>Karaikal Unit</option><option>Pollachi Unit</option><option>Mattaparai Unit</option><option>Salem Unit</option><option>Alangudi Unit</option><option>Head Office</option><option>Manalur Unit</option><option>Other Units</option></select></div>
-<div><label>Status</label><select id="reportStatus"><option>All</option><option>In Progress</option><option>Completed</option><option>Pending</option></select></div>
+<div><label>Status</label><select id="reportStatus"><option>Completed</option><option>All</option><option>In Progress</option><option>Pending</option></select></div>
+<div><label>Work Sub Category</label>
+<select id="reportSubCategory">
+<option value="All">All Sub Categories</option>
+<option value="Drawing">1. Drawing</option>
+<option value="5S Work">2. 5S Work</option>
+<option value="Other Department">3. Other Department Work</option>
+<option value="Training">4. Training</option>
+</select></div>
 </div>
 <div class="actions">
 <button class="primary" type="button" onclick="generateReport()">📊 Generate Report</button>
+<button class="secondary" type="button" onclick="exportCompletedWorkExcel()">📗 Export Excel</button>
 <button class="secondary" type="button" onclick="clearReport()">Clear</button>
 <button class="secondary" type="button" onclick="printReport()">🖨️ Print</button>
 </div>
 <div id="reportMsg"></div>
 </div>
-<div class="card"><h3>📋 Report Result</h3><div id="reportBox"><p class="small">Select filters and click Generate Report.</p></div></div>
+<div class="card"><h3>📋 Completed Work Report</h3><div id="reportBox"><p class="small">Select filters and click Generate Report.</p></div></div>
 </section>
 
 
@@ -479,6 +493,36 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
   </div>
 </section>
 
+<section id="unitVisit" class="hidden">
+<div class="card">
+  <h2>🚗 Unit Visit / Travel</h2>
+  <div class="info">Home Unit: <b>Tirunelveli Unit</b>. Record when you leave for another Unit and when you return.</div>
+</div>
+<div class="card">
+  <h3>➕ New Unit Visit</h3>
+  <form id="unitVisitForm">
+    <input type="hidden" id="uvEditingId" value="">
+    <div class="grid">
+      <div><label>Home Unit</label><input id="uvHomeUnit" value="Tirunelveli Unit" readonly></div>
+      <div><label>Visit Unit</label><select id="uvVisitUnit"><option>Madurai Unit</option><option>Namakkal Unit</option><option>Karaikal Unit</option><option>Pollachi Unit</option><option>Mattaparai Unit</option><option>Salem Unit</option><option>Alangudi Unit</option><option>Head Office</option><option>Manalur Unit</option><option>Other Units</option></select></div>
+      <div><label>Purpose / Work</label><input id="uvPurpose" placeholder="Company work / discussion / site visit" required></div>
+      <div><label>Departure Date</label><input type="date" id="uvDepartureDate" required></div>
+      <div><label>Departure Time</label><input type="time" id="uvDepartureTime" required></div>
+      <div><label>Return Date</label><input type="date" id="uvReturnDate"></div>
+      <div><label>Return Time</label><input type="time" id="uvReturnTime"></div>
+    </div>
+    <div style="margin-top:10px"><label>Remarks</label><textarea id="uvRemarks" placeholder="Optional remarks"></textarea></div>
+    <div class="actions"><button class="primary" id="uvSaveBtn">💾 Save Unit Visit</button><button type="button" class="secondary" onclick="clearUnitVisitForm()">Clear</button><button type="button" class="secondary hidden" id="uvCancelBtn" onclick="cancelUnitVisitEdit()">Cancel Edit</button></div>
+    <div id="unitVisitMsg"></div>
+  </form>
+</div>
+<div class="card">
+  <h3>📋 Unit Visit History</h3>
+  <div class="toolbar"><input id="unitVisitSearch" placeholder="🔎 Search Unit / Purpose..." oninput="renderUnitVisits()"></div>
+  <div id="unitVisitList"></div>
+</div>
+</section>
+
 <section id="backup" class="hidden">
 <div class="card">
 <h2>💾 Data Backup / Restore</h2>
@@ -505,8 +549,14 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 
 
 <script>
-let sb=null,user=null,tasks=[],reminders=[],leaves=[]; let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
-const today=new Date().toISOString().slice(0,10);
+let sb=null,user=null,tasks=[],reminders=[],leaves=[];
+const SUBCAT_STORAGE_KEY='completed_work_subcategories_v1';
+function getSubcatMap(){try{return JSON.parse(localStorage.getItem(SUBCAT_STORAGE_KEY)||'{}')}catch(e){return {}}}
+function setSubcatLocal(id,value){const m=getSubcatMap();m[String(id)]=value;localStorage.setItem(SUBCAT_STORAGE_KEY,JSON.stringify(m));}
+function getEffectiveSubcat(t){const m=getSubcatMap();return String(m[String(t.id)]||t.work_sub_category||'').trim();}
+let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
+function localISODate(d=new Date()){const y=d.getFullYear();const m=String(d.getMonth()+1).padStart(2,'0');const day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`}
+const today=localISODate();
 const $=id=>document.getElementById(id);
 function esc(x){return String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
 function msg(id,text,type='ok'){const el=$(id);if(el)el.innerHTML='<div class="msg '+type+'">'+esc(text)+'</div>'}
@@ -554,8 +604,9 @@ function showTab(id,btn){
   if(id==='leave')renderLeaves();
   if(id==='attendance')renderAttendance();
   if(id==='backup')renderBackupInfo();
+  if(id==='unitVisit'){initUnitVisitForm();renderUnitVisits();}
 }
-async function loadAll(){await loadTasks();await loadReminders();await loadLeaves();populateRelatedWork();renderDashboard();renderInbox();renderMyWork();renderReminders();renderLeaves();populateCompletedMyWork();renderCompletedTasks()}
+async function loadAll(){await loadTasks();await loadReminders();await loadLeaves();populateRelatedWork();renderDashboard();renderInbox();renderMyWork();renderReminders();renderLeaves();renderUnitVisits();populateCompletedMyWork();renderCompletedTasks()}
 async function loadTasks(){
   const r=await sb.from('tasks').select('*').order('start_date',{ascending:false}).order('created_at',{ascending:false});
   if(r.error){msg('setupMsg','Database error: '+r.error.message,'error');return}
@@ -582,7 +633,7 @@ function formatMinutes(m){return `${Math.floor(m/60)}h ${m%60}m`}
 function taskHours(t){let total=0;try{getLocalTimeHistory(t.id).forEach(x=>total+=minutesBetween(x.start_time,x.end_time))}catch(_){}if(!total&&t.start_time&&t.end_time)total=minutesBetween(t.start_time,t.end_time);return total}
 function taskHTML(t){
   return `<div class="task"><h3>${esc(t.project)} ${revisionBadge(t.revision_no??0)} ${badge(t.status)} ${dueBadge(t)}</h3>
-  <div class="meta"><b>${esc(t.unit)}</b> • ${t.start_date}
+  <div class="meta"><b>${esc(t.unit)}</b> • ${esc(reportDate(t.start_date))}
   ${t.travel?' • 🚗 Travel/Site Visit':''}
   ${t.revision_type&&t.revision_type!=='Original Work'?' • '+esc(t.revision_type):''}<br>
   Category: ${esc(t.category)}<br>Plan: ${esc(t.plan_activity||'-')}<br>Actual: ${esc(t.actual_activity||'-')}<br>
@@ -609,12 +660,12 @@ function dashWorkHTML(t){
 }
 function dashCompletedHTML(t){
   return `<div class="task"><h3>${esc(t.project)} ${revisionBadge(t.revision_no??0)} ${badge('Completed')}</h3>
-  <div class="meta"><b>${esc(t.unit||'-')}</b> • Completed: ${esc(t.completed_at?new Date(t.completed_at).toLocaleDateString('en-IN'):t.start_date||'-')}<br>
+  <div class="meta"><b>${esc(t.unit||'-')}</b> • Completed: ${esc(t.completed_at?reportDate(t.completed_at):reportDate(t.start_date))}<br>
   ${esc(t.actual_activity||t.plan_activity||'-')}</div></div>`;
 }
 function renderDashboard(){
   const a=tasks.filter(t=>t.start_date===today);
-  $('kTotal').textContent=a.length;$('kDone').textContent=a.filter(t=>t.status==='Completed').length;
+  $('kTotal').textContent=a.length;$('kDone').textContent=a.filter(t=>String(t.status||'').toLowerCase()==='completed').length;
   $('kProgress').textContent=a.filter(t=>t.status==='In Progress').length;$('kSite').textContent=a.filter(t=>t.travel||t.category==='Site Visit').length;
   const pending=tasks.filter(t=>t.workflow_status==='Pending Assignment');
   const pendingCount=pending.length;
@@ -634,6 +685,12 @@ function renderDashboard(){
   $('dashInboxList').innerHTML=recentInbox.length?recentInbox.map(dashWorkHTML).join(''):'<p>No unstarted work.</p>';
   $('dashMyWorkList').innerHTML=recentMyWork.length?recentMyWork.map(dashWorkHTML).join(''):'<p>No live work.</p>';
   $('dashCompletedList').innerHTML=recentCompleted.length?recentCompleted.map(dashCompletedHTML).join(''):'<p>No completed work.</p>';
+  const todayInbox=$('todayInboxList');
+  if(todayInbox){
+    todayInbox.innerHTML = pending.length
+      ? '<div style="font-weight:700;margin-bottom:10px">📥 Inbox Work</div>'+pending.map(t=>{const ds=dueState(t); return `<div style="padding:9px 10px;margin:6px 0;border:1px solid #e2e8f0;border-radius:9px;background:#f8fafc"><b>${esc(t.project||'Untitled Work')}</b><span style="display:block;font-size:13px;margin-top:3px">Unit: ${esc(t.unit||'-')}</span>${t.due_date?`<span style="display:block;font-size:13px;margin-top:3px">Due Date: <b>${esc(reportDate(t.due_date))}</b> ${dueBadge(t)}</span>`:''}</div>`}).join('')
+      : '<div style="margin-top:16px;color:#64748b">No Inbox Work</div>';
+  }
   renderCalendar();renderPhase2Analytics();
 }
 
@@ -671,33 +728,22 @@ async function pickSelectedInboxToHide(){
 }
 
 function openAssignWorkForm(prefillDate){
-  const outer=$('inboxFormWrap');
-  const wrap=$('assignWorkFormWrap');
-  if(!wrap)return;
-  // The form is inside inboxFormWrap, which is hidden by default.
-  // Open both containers so the Assign Work form is actually visible.
-  if(outer) outer.style.display='block';
+  const wrap=$('assignWorkFormWrap'); if(!wrap)return;
   wrap.classList.remove('hidden');
-  wrap.style.display='block';
-  const dateEl=$('wReceived')||$('wReceivedDate')||$('receivedDate')||$('wDate');
+  const dateEl=$('wReceived');
   if(prefillDate && dateEl) dateEl.value=prefillDate;
-  else if(dateEl && !dateEl.value) dateEl.value=today;
   const btn=$('assignWorkBtn'); if(btn){btn.classList.add('hidden');btn.style.display='none';}
   const first=wrap.querySelector('input,select,textarea'); if(first)first.focus();
-  wrap.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function closeAssignWorkForm(){
-  const wrap=$('assignWorkFormWrap');
-  if(!wrap)return;
+  const wrap=$('assignWorkFormWrap'); if(!wrap)return;
   wrap.classList.add('hidden');
-  wrap.style.display='none';
-  const outer=$('inboxFormWrap'); if(outer) outer.style.display='none';
   const btn=$('assignWorkBtn'); if(btn){btn.classList.remove('hidden');btn.style.display='inline-flex';}
   clearInboxForm();
 }
-function renderInbox(){const q=($('inboxSearch')?.value||'').trim();const a=tasks.filter(t=>t.workflow_status==='Pending Assignment'&&taskSearchMatch(t,q));$('pendingList').innerHTML=a.length?a.map(t=>`<div class="task"><h3>${esc(t.project)} ${priorityBadge(t.priority)} ${revisionBadge(t.revision_no??0)} ${dueBadge(t)}</h3><div class="meta"><b>${esc(t.unit)}</b> • Received: ${t.received_date||t.start_date}<br>Given By: ${esc(t.assigned_by||'-')}<br>Category: ${esc(t.category)}${t.work_sub_category?' • Sub Category: '+esc(t.work_sub_category):''}<br>Due: ${esc(t.due_date||'-')}<br>Details: ${esc(t.work_details||'-')}</div><div class="actions"><button class="primary smallbtn" onclick="pickWork('${t.id}')">▶️ Pick / Start Work</button><button class="secondary smallbtn pickhide-btn" onclick="pickWork('${t.id}')" title="Pick this work and hide it from Work Inbox">📥 Pick to Hide</button><button class="secondary smallbtn" onclick="editInboxWork('${t.id}')">✏️ Edit</button></div></div>`).join(''):'<p>No pending assigned work matching your search.</p>'}
+function renderInbox(){const q=($('inboxSearch')?.value||'').trim();const a=tasks.filter(t=>t.workflow_status==='Pending Assignment'&&taskSearchMatch(t,q));$('pendingList').innerHTML=a.length?a.map(t=>`<div class="task"><h3>${esc(t.project)} ${priorityBadge(t.priority)} ${revisionBadge(t.revision_no??0)} ${dueBadge(t)}</h3><div class="meta"><b>${esc(t.unit)}</b> • Received: ${esc(reportDate(t.received_date||t.start_date))}<br>Given By: ${esc(t.assigned_by||'-')}<br>Category: ${esc(t.category)}${t.work_sub_category?' • Sub Category: '+esc(t.work_sub_category):''}<br>Due: ${esc(reportDate(t.due_date||''))}<br>Details: ${esc(t.work_details||'-')}</div><div class="actions"><button class="primary smallbtn" onclick="pickWork('${t.id}')">▶️ Pick / Start Work</button><button class="secondary smallbtn pickhide-btn" onclick="pickWork('${t.id}')" title="Pick this work and hide it from Work Inbox">📥 Pick to Hide</button><button class="secondary smallbtn" onclick="editInboxWork('${t.id}')">✏️ Edit</button></div></div>`).join(''):'<p>No pending assigned work matching your search.</p>'}
 
-function renderMyWork(){const q=($('myWorkSearch')?.value||'').trim();const df=$('myWorkDueFilter')?.value||'All';const a=tasks.filter(t=>{if(!((t.workflow_status==='Picked'||t.workflow_status==='Working')&&t.status!=='Completed'))return false;if(!taskSearchMatch(t,q))return false;return df==='All'||dueState(t).key===df});$('myWorkList').innerHTML=a.length?a.map(t=>`<div class="task"><h3>${esc(t.project)} ${revisionBadge(t.revision_no??0)} ${badge(t.status)} ${dueBadge(t)}</h3><div class="meta"><b>${esc(t.unit)}</b> • First Date: ${esc(t.start_date||'-')}<br>Given By: ${esc(t.assigned_by||'-')} • Priority: ${esc(t.priority||'-')}<br>Workflow: ${esc(t.workflow_status||'-')} • Due: ${esc(t.due_date||'-')}<br>⏱️ Total Logged: <b>${formatMinutes(taskHours(t))}</b><br>${esc(t.actual_activity||t.work_details||'-')}</div><div class="actions">${t.workflow_status==='Picked'?`<button class="primary smallbtn" onclick="startPicked('${t.id}')">▶ Start</button>`:''}<button class="primary smallbtn" onclick="openTaskFromWork('${t.id}')">✏️ Update Work</button><button class="secondary smallbtn" onclick="deleteMyWork('${t.id}')">🗑️ Delete</button><button class="secondary smallbtn" onclick="sendBackToInbox('${t.id}')">↩️ Send Back to Work Inbox</button></div></div>`).join(''):'<p>No active work matching the selected filter.</p>'}
+function renderMyWork(){const q=($('myWorkSearch')?.value||'').trim();const df=$('myWorkDueFilter')?.value||'All';const a=tasks.filter(t=>{if(!((t.workflow_status==='Picked'||t.workflow_status==='Working')&&t.status!=='Completed'))return false;if(!taskSearchMatch(t,q))return false;return df==='All'||dueState(t).key===df});$('myWorkList').innerHTML=a.length?a.map(t=>`<div class="task"><h3>${esc(t.project)} ${revisionBadge(t.revision_no??0)} ${badge(t.status)} ${dueBadge(t)}</h3><div class="meta"><b>${esc(t.unit)}</b> • First Date: ${esc(reportDate(t.start_date))}<br>Given By: ${esc(t.assigned_by||'-')} • Priority: ${esc(t.priority||'-')}<br>Workflow: ${esc(t.workflow_status||'-')} • Due: ${esc(reportDate(t.due_date||''))}<br>⏱️ Total Logged: <b>${formatMinutes(taskHours(t))}</b><br>${esc(t.actual_activity||t.work_details||'-')}</div><div class="actions">${t.workflow_status==='Picked'?`<button class="primary smallbtn" onclick="startPicked('${t.id}')">▶ Start</button>`:''}<button class="primary smallbtn" onclick="openTaskFromWork('${t.id}')">✏️ Update Work</button><button class="secondary smallbtn" onclick="deleteMyWork('${t.id}')">🗑️ Delete</button><button class="secondary smallbtn" onclick="sendBackToInbox('${t.id}')">↩️ Send Back to Work Inbox</button></div></div>`).join(''):'<p>No active work matching the selected filter.</p>'}
 
 async function deleteMyWork(id){
   const t=tasks.find(x=>x.id===id);if(!t)return;
@@ -775,6 +821,8 @@ function clearInboxForm(){
 function editInboxWork(id){
   const t=tasks.find(x=>x.id===id);
   if(!t)return;
+  openInboxAddForm(t.received_date||t.start_date||today);
+  openAssignWorkForm();
   editingInboxTaskId=id;
   $('wReceived').value=t.received_date||t.start_date||today;
   $('wGivenBy').value=t.assigned_by||'';
@@ -785,7 +833,7 @@ function editInboxWork(id){
   $('wDue').value=t.due_date||'';
   $('wDetails').value=t.work_details||'';
   const sub=$('workSubCategory');
-  if(sub)sub.value=t.work_sub_category||'';
+  if(sub)sub.value=getEffectiveSubcat(t)||'';
   const btn=$('inboxForm').querySelector('button.primary');
   if(btn)btn.textContent='💾 Update Work';
   $('inboxForm').scrollIntoView({behavior:'smooth',block:'start'});
@@ -795,6 +843,9 @@ $('inboxForm').onsubmit=async e=>{
   e.preventDefault();
   if(!user)return;
 
+  const subCategory=$('workSubCategory')?.value||'';
+  // The current Supabase tasks table may not contain work_sub_category.
+  // Keep Sub Category in the browser map, while sending only schema-safe task fields to Supabase.
   const data={
     start_date:$('wReceived').value,
     unit:$('wUnit').value,
@@ -812,6 +863,10 @@ $('inboxForm').onsubmit=async e=>{
   if(editingInboxTaskId){
     // Edit only updates the pending assignment details; workflow/status remain unchanged.
     r=await sb.from('tasks').update(data).eq('id',editingInboxTaskId);
+    if(r.error){msg('inboxMsg',r.error.message,'error');return}
+    if(subCategory) setSubcatLocal(editingInboxTaskId,subCategory);
+    const localTask=tasks.find(x=>x.id===editingInboxTaskId);
+    if(localTask){Object.assign(localTask,data); if(subCategory)localTask.work_sub_category=subCategory;}
   }else{
     r=await sb.from('tasks').insert({
       ...data,
@@ -831,9 +886,11 @@ $('inboxForm').onsubmit=async e=>{
       revision_reason:null,
       parent_task_id:null
     });
+    if(r.error){msg('inboxMsg',r.error.message,'error');return}
+    const newTask=Array.isArray(r.data)?r.data[0]:r.data;
+    if(newTask && subCategory) setSubcatLocal(newTask.id,subCategory);
   }
 
-  if(r.error){msg('inboxMsg',r.error.message,'error');return}
   msg('inboxMsg',editingInboxTaskId?'Work updated successfully.':'Work added to Pending Work.','ok');
   clearInboxForm();
   await loadTasks();
@@ -1068,16 +1125,68 @@ $('completedTaskForm').onsubmit=async e=>{
   msg('completedFormMsg','Work completed successfully and added to Completed Task List.','ok');
   clearCompletedForm();await loadTasks();populateCompletedMyWork();renderCompletedTasks();renderDashboard();renderMyWork();renderInbox();renderTasks();
 };
+function completedSubCategoryOptions(selected){
+  const v=reportSub({work_sub_category:selected||''});
+  return `<option value="">-- Select Sub Category --</option>
+    <option value="Drawing" ${v==='Drawing'?'selected':''}>1. Drawing</option>
+    <option value="5S Work" ${v==='5S Work'?'selected':''}>2. 5S Work</option>
+    <option value="Other Department Work" ${v==='Other Department'?'selected':''}>3. Other Department Work</option>
+    <option value="Training" ${v==='Training'?'selected':''}>4. Training</option>`;
+}
 function completedTaskHTML(t){
+  const savedSub=String(getEffectiveSubcat(t)).trim();
+  const subLabel=savedSub ? reportSub({work_sub_category:savedSub}) : '';
+  const subUI=savedSub
+    ? `<div class="grid" style="margin-top:10px;align-items:end"><div><label>📂 Work Sub Category</label><div class="meta"><b>${esc(subLabel)}</b> <span class="badge">Saved</span></div></div></div>`
+    : `<div class="grid" style="margin-top:10px;align-items:end">
+    <div><label>📂 Work Sub Category</label><select id="completedSub_${esc(t.id)}" data-task-id="${esc(t.id)}">${completedSubCategoryOptions('')}</select></div>
+    <div><label>&nbsp;</label><button class="primary smallbtn" type="button" onclick="saveCompletedSubCategory('${esc(t.id)}',this)">💾 Save Sub Category</button></div>
+  </div>`;
   return `<div class="task"><h3>${esc(t.project)} ${revisionBadge(t.revision_no??0)} ${badge('Completed')}</h3>
-  <div class="meta"><b>${esc(t.unit)}</b> • Completed: ${esc(t.completed_at?new Date(t.completed_at).toLocaleDateString('en-IN'):t.start_date)}<br>
+  <div class="meta"><b>${esc(t.unit)}</b> • Completed: ${esc(t.completed_at?reportDate(t.completed_at):reportDate(t.start_date))}<br>
   Category: ${esc(t.category||'-')} • Revision: ${esc(t.revision_type||'Original Work')}<br>
   Plan: ${esc(t.plan_activity||'-')}<br>Actual: ${esc(t.actual_activity||'-')}<br>
   ${t.start_time||''}${t.end_time?' → '+t.end_time:''}${t.location?' • '+esc(t.location):''}<br>
   Remarks: ${esc(t.remarks||'-')}
   ${t.revision_reason?'<br>Revision Reason: '+esc(t.revision_reason):''}</div>
-  <div class="actions"><button class="primary smallbtn" onclick="reworkCompletedTask('${t.id}')">🔄 Rework</button><button class="secondary smallbtn" onclick="editTask('${t.id}')">✏️ View / Edit</button></div></div>`;
+  ${subUI}
+  <div class="actions"><button class="secondary smallbtn" onclick="reworkCompletedTask('${esc(t.id)}')">🔄 Rework</button><button class="secondary smallbtn" onclick="editTask('${esc(t.id)}')">✏️ View / Edit</button></div></div>`;
 }
+async function saveCompletedSubCategory(id,btn){
+  const sel=$('completedSub_'+id); const value=sel?.value||'';
+  if(!value){alert('Please select a Work Sub Category.');return}
+  if(btn){btn.disabled=true;btn.textContent='⏳ Saving...'}
+  // Always keep a local copy so reporting continues to work even when the
+  // existing Supabase tasks table does not yet have work_sub_category.
+  setSubcatLocal(id,value);
+  const r=await sb.from('tasks').update({work_sub_category:value,updated_at:new Date().toISOString()}).eq('id',id);
+  const t=tasks.find(x=>x.id===id); if(t)t.work_sub_category=value;
+  if(r.error){
+    if(btn){btn.disabled=false;btn.textContent='⚠️ Saved Locally'}
+    setTimeout(()=>{if(btn)btn.textContent='💾 Save Sub Category'},1800);
+    return;
+  }
+  if(btn){btn.disabled=false;btn.textContent=r.error?'⚠️ Saved Locally':'✅ Saved'}
+  renderCompletedTasks();
+}
+async function saveAllCompletedSubCategories(){
+  const selects=[...document.querySelectorAll('#completedTaskList select[data-task-id]')];
+  if(!selects.length){alert('All completed works already have a saved Sub Category.');return}
+  const missing=selects.filter(s=>!s.value);
+  if(missing.length){alert('Please select Sub Category for all unsaved completed works in the current list before saving.');return}
+  let saved=0,dbErrors=0;
+  for(const s of selects){
+    const id=s.dataset.taskId,value=s.value;
+    setSubcatLocal(id,value);
+    const t=tasks.find(x=>x.id===id);if(t)t.work_sub_category=value;
+    const r=await sb.from('tasks').update({work_sub_category:value,updated_at:new Date().toISOString()}).eq('id',id);
+    saved++; if(r.error)dbErrors++;
+  }
+  renderCompletedTasks();
+  if(dbErrors){alert(`${saved} completed works saved for this browser. ${dbErrors} database updates could not be saved because the existing database may not have the Sub Category column. Report will still use the saved Sub Categories on this device.`)}
+  else alert(`${saved} completed work${saved===1?'':'s'} Sub Category saved successfully. The Sub Category option is now hidden for these works.`);
+}
+
 async function reworkCompletedTask(id){
   const t=tasks.find(x=>x.id===id);if(!t||t.status!=='Completed')return;
   const nextRev=Number(t.revision_no||0)+1;
@@ -1096,22 +1205,159 @@ async function reworkCompletedTask(id){
 }
 function renderCompletedTasks(){
   const from=$('cFrom')?.value||'0000-01-01',to=$('cTo')?.value||'9999-12-31',u=$('cFilterUnit')?.value||'All';
-  const a=tasks.filter(t=>t.status==='Completed' && t.start_date>=from && t.start_date<=to && (u==='All'||t.unit===u));
+  const a=tasks.filter(t=>t.status==='Completed' && t.start_date>=from && t.start_date<=to && (u==='All'||t.unit===u))
+    .sort((x,y)=>{
+      const dx=String(x.completed_at||x.completed_date||x.start_date||'9999-12-31');
+      const dy=String(y.completed_at||y.completed_date||y.start_date||'9999-12-31');
+      if(dx!==dy) return dx.localeCompare(dy);
+      const rx=Number(x.revision_no||0), ry=Number(y.revision_no||0);
+      return rx-ry;
+    });
   $('completedTaskList').innerHTML=a.length?a.map(completedTaskHTML).join(''):'<p>No completed tasks found.</p>';
 }
 
 function renderTasks(){const d=$('filterDate').value,u=$('filterUnit').value,q=($('allTaskSearch')?.value||'').trim();const a=tasks.filter(t=>(!d||t.start_date===d)&&(u==='All'||t.unit===u)&&taskSearchMatch(t,q));$('allTasks').innerHTML=a.length?a.map(taskHTML).join(''):'<p>No matching tasks.</p>'}
 
-function generateReport(){const f=$('from')?.value||'0000-01-01',to=$('to')?.value||'9999-12-31',unit=$('reportUnit')?.value||'All',status=$('reportStatus')?.value||'All';const a=tasks.filter(t=>String(t.start_date||'')>=f&&String(t.start_date||'')<=to&&(unit==='All'||t.unit===unit)&&(status==='All'||t.status===status));const totalMin=a.reduce((n,t)=>n+taskHours(t),0);const rows=a.map(t=>`<tr><td>${esc(t.project)}</td><td>${esc(t.unit||'-')}</td><td>${esc(t.start_date||'-')}</td><td>${esc(t.due_date||'-')}</td><td>${esc(t.status||'-')}</td><td>${esc(t.category||'-')}</td><td>${formatMinutes(taskHours(t))}</td></tr>`).join('');$('reportBox').innerHTML=`<div class="report-summary"><div><b>Total</b><br><span>${a.length}</span></div><div><b>Completed</b><br><span>${a.filter(t=>t.status==='Completed').length}</span></div><div><b>In Progress</b><br><span>${a.filter(t=>t.status==='In Progress').length}</span></div><div><b>Pending</b><br><span>${a.filter(t=>t.status==='Pending').length}</span></div><div><b>Overdue</b><br><span>${a.filter(t=>dueState(t).key==='Overdue'&&t.status!=='Completed').length}</span></div><div><b>Total Hours</b><br><span>${formatMinutes(totalMin)}</span></div></div><div class="report-filter-note"><b>Period:</b> ${esc(f)} to ${esc(to)} • <b>Unit:</b> ${esc(unit)} • <b>Status:</b> ${esc(status)}</div><table class="report-table"><thead><tr><th>Project / Work</th><th>Unit</th><th>Start Date</th><th>Due</th><th>Status</th><th>Category</th><th>Logged Time</th></tr></thead><tbody>${rows||'<tr><td colspan="7">No matching work found.</td></tr>'}</tbody></table>`}
-function clearReport(){$('from').value='';$('to').value='';$('reportUnit').value='All';$('reportStatus').value='All';$('reportBox').innerHTML='<p class="small">Select filters and click Generate Report.</p>'}
-function printReport(){const box=$('reportBox');if(!box||!box.innerText.trim()){msg('reportMsg','Generate the report first.','error');return}const w=window.open('','_blank','width=1100,height=800');if(!w){msg('reportMsg','Please allow pop-ups to print the report.','error');return}w.document.write(`<html><head><title>Work Report</title><style>body{font-family:Arial;padding:24px}.report-table{width:100%;border-collapse:collapse}.report-table th,.report-table td{border:1px solid #ddd;padding:7px}.report-table th{background:#f5f5f5}</style></head><body><h1>📊 Work Report</h1>${box.innerHTML}
-</body></html>`);w.document.close();w.focus();setTimeout(()=>w.print(),300)}
+function reportSub(t){
+  const raw=String(getEffectiveSubcat(t)).trim();
+  const v=raw.toLowerCase().replace(/^\d+\.\s*/, '').replace(/\s+/g,' ');
+  if(v==='other department work' || v==='other department') return 'Other Department';
+  if(v==='drawing' || v==='drawings') return 'Drawing';
+  if(v==='5s work' || v==='5s') return '5S Work';
+  if(v==='training') return 'Training';
+  return raw;
+}
+function reportReference(t){ return String(t.assigned_by||t.given_by||'').trim() || '-'; }
+function reportDate(v){
+  const raw=String(v||'').trim();
+  if(!raw) return '-';
+  const m=raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return `${m[3]}-${m[2]}-${m[1]}`;
+  const d=new Date(raw);
+  if(!Number.isNaN(d.getTime())) return String(d.getDate()).padStart(2,'0')+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+d.getFullYear();
+  return raw;
+}
+
+function reportData(){
+  const f=$('from')?.value||'', to=$('to')?.value||'';
+  const unit=$('reportUnit')?.value||'All', status=$('reportStatus')?.value||'Completed';
+  const sub=$('reportSubCategory')?.value||'All';
+  return tasks.filter(t=>{
+    const rawDate=t.completed_at?t.completed_at.slice(0,10):(t.completed_date||t.start_date||'');
+    const d=String(rawDate).match(/^\d{4}-\d{2}-\d{2}$/)?String(rawDate):(()=>{const x=String(rawDate).match(/^(\d{2})-(\d{2})-(\d{4})$/);return x?`${x[3]}-${x[2]}-${x[1]}`:String(rawDate)})() ;
+    const st=String(t.status||'').trim().toLowerCase();
+    const wanted=String(status||'').trim().toLowerCase();
+    const dateOK=(!f||d>=f)&&(!to||d<=to);
+    const statusOK=(status==='All'||st===wanted);
+    const unitOK=(unit==='All'||String(t.unit||'')===String(unit));
+    const subOK=(sub==='All'||reportSub(t)===sub);
+    return dateOK&&statusOK&&unitOK&&subOK;
+  }).sort((a,b)=>{
+    const da=String(a.completed_at?a.completed_at.slice(0,10):(a.completed_date||a.start_date||''));
+    const db=String(b.completed_at?b.completed_at.slice(0,10):(b.completed_date||b.start_date||''));
+    const dateCmp=da.localeCompare(db);
+    if(dateCmp!==0) return dateCmp;
+    const ra=Number(a.revision_no||0), rb=Number(b.revision_no||0);
+    if(ra!==rb) return ra-rb;
+    const sa=String(a.project||''), sb=String(b.project||'');
+    return sa.localeCompare(sb);
+  });
+}
+function reportGroupLabel(sub){
+  return sub==='Drawing'?'1. Drawing':sub==='5S Work'?'2. 5S Work':sub==='Other Department'?'3. Other Department Work':sub==='Training'?'4. Training':sub;
+}
+function completedReportRows(sub){
+  return reportData().filter(t=>reportSub(t)===sub);
+}
+function reportRemarks(t){
+  const base=String(t.remarks||'').trim();
+  const revNo=Number(t.revision_no||0);
+  const revType=String(t.revision_type||'').trim();
+  let revText='';
+  if(revNo>0 || revType.toLowerCase()==='rework') revText=`Revision No: ${revNo>0?revNo:1}`;
+  else revText='Original Work';
+  return base ? `${base} • ${revText}` : revText;
+}
+function generateReport(){
+  const a=reportData(), f=$('from')?.value||'All', to=$('to')?.value||'All';
+  const unit=$('reportUnit')?.value||'All', status=$('reportStatus')?.value||'Completed', sub=$('reportSubCategory')?.value||'All';
+  const totalMin=a.reduce((n,t)=>n+taskHours(t),0);
+  const groups=['Drawing','5S Work','Other Department','Training'].filter(x=>sub==='All'||x===sub);
+  if(sub==='All' && a.some(t=>!['Drawing','5S Work','Other Department','Training'].includes(reportSub(t)))) groups.push('__Other__');
+  const sections=groups.map(g=>{
+    let rows=(g==='__Other__') ? a.filter(t=>!['Drawing','5S Work','Other Department','Training'].includes(reportSub(t))) : completedReportRows(g);
+    // Drawing report must be ordered strictly by Start Date (oldest to newest).
+    if(g==='Drawing'){
+      rows=[...rows].sort((x,y)=>{
+        const dx=String(x.start_date||'');
+        const dy=String(y.start_date||'');
+        const c=dx.localeCompare(dy);
+        if(c!==0) return c;
+        const rx=Number(x.revision_no||0), ry=Number(y.revision_no||0);
+        if(rx!==ry) return rx-ry;
+        return String(x.project||'').localeCompare(String(y.project||''));
+      });
+    }
+    const body=rows.map((t,i)=>{
+      if(g==='Drawing') return `<tr><td>${i+1}</td><td>${esc(t.unit||'-')}</td><td>${esc(t.project||'-')}</td><td>${esc(reportDate(t.start_date))}</td><td>${esc(reportDate(t.completed_at?t.completed_at.slice(0,10):(t.end_date||'')))}</td><td>${esc(reportReference(t))}</td><td>${esc(reportRemarks(t))}</td></tr>`;
+      if(g==='5S Work') return `<tr><td>${i+1}</td><td>${esc(t.unit||'-')}</td><td>${esc(t.project||'-')}</td><td>${esc(reportDate(t.completed_at?t.completed_at.slice(0,10):(t.start_date||'')))}</td><td>${esc(t.application||t.work_details||t.actual_activity||'-')}</td><td>${esc(reportReference(t))}</td><td>${esc(reportRemarks(t))}</td></tr>`;
+      if(g==='Other Department') return `<tr><td>${i+1}</td><td>${esc(t.unit||'-')}</td><td>${esc(t.project||'-')}</td><td>${esc(reportDate(t.completed_at?t.completed_at.slice(0,10):(t.start_date||'')))}</td><td>${esc(reportReference(t))}</td><td>${esc(reportRemarks(t))}</td></tr>`;
+      if(g==='__Other__') return `<tr><td>${i+1}</td><td>${esc(t.unit||'-')}</td><td>${esc(t.project||'-')}</td><td>${esc(reportSub(t)||'-')}</td><td>${esc(reportDate(t.completed_at?t.completed_at.slice(0,10):(t.start_date||'')))}</td><td>${esc(t.application||t.work_details||t.actual_activity||'-')}</td><td>${esc(reportRemarks(t))}</td></tr>`;
+      return `<tr><td>${i+1}</td><td>${esc(t.unit||'-')}</td><td>${esc(t.project||'-')}</td><td>${esc(reportDate(t.completed_at?t.completed_at.slice(0,10):(t.start_date||'')))}</td><td>${esc(t.application||t.work_details||t.actual_activity||'-')}</td><td>${esc(reportRemarks(t))}</td></tr>`;
+    }).join('');
+    let head='', colspan=7;
+    if(g==='Drawing') head='<tr><th>Sl.No</th><th>Unit</th><th>Work Name</th><th>Start Date</th><th>End Date</th><th>Ref</th><th>Remarks</th></tr>';
+    if(g==='5S Work') head='<tr><th>Sl.No</th><th>Unit</th><th>Work Name</th><th>Date</th><th>Application</th><th>Ref</th><th>Remarks</th></tr>';
+    if(g==='Other Department') {head='<tr><th>Sl.No</th><th>Unit</th><th>Work Name</th><th>Date</th><th>Ref</th><th>Remarks</th></tr>'; colspan=6;}
+    if(g==='Training') {head='<tr><th>Sl.No</th><th>Unit</th><th>Work Name</th><th>Date</th><th>Application</th><th>Remarks</th></tr>'; colspan=6;}
+    if(g==='__Other__') {head='<tr><th>Sl.No</th><th>Unit</th><th>Work Name</th><th>Sub Category</th><th>Date</th><th>Details</th><th>Remarks</th></tr>'; colspan=7;}
+    return `<div class="report-group"><h3>${reportGroupLabel(g)} <span class="small">(${rows.length})</span></h3><table class="report-table"><thead>${head}</thead><tbody>${body||`<tr><td colspan="${colspan}">No completed work found.</td></tr>`}</tbody></table></div>`;
+  }).join('');
+  $('reportBox').innerHTML=`<div class="report-summary"><div><b>Total Works</b><br><span>${a.length}</span></div><div><b>Completed</b><br><span>${a.filter(t=>t.status==='Completed').length}</span></div><div><b>Total Hours</b><br><span>${formatMinutes(totalMin)}</span></div></div><div class="report-filter-note"><b>Period:</b> ${esc(f==='All'?'All':reportDate(f))} to ${esc(to==='All'?'All':reportDate(to))} • <b>Unit:</b> ${esc(unit)} • <b>Status:</b> ${esc(status)} • <b>Sub Category:</b> ${esc(sub==='All'?'All Sub Categories':reportGroupLabel(sub))}</div>${sections}`;
+}
+function clearReport(){
+  $('from').value='';$('to').value='';$('reportUnit').value='All';$('reportStatus').value='Completed';$('reportSubCategory').value='All';
+  $('reportBox').innerHTML='<p class="small">Select filters and click Generate Report.</p>';
+  if($('reportMsg'))$('reportMsg').innerHTML='';
+}
+function exportCompletedWorkExcel(){
+  if(typeof XLSX==='undefined'){msg('reportMsg','Excel export library could not be loaded. Please use the online PWA and try again.','error');return}
+  const a=reportData();
+  const wb=XLSX.utils.book_new();
+  const defs=[
+    {key:'Drawing',name:'1. Drawing',headers:['Sl.No','Unit','Work Name','Start Date','End Date','Ref','Remarks'],data:t=>[t.unit||'',t.project||'',reportDate(t.start_date||''),reportDate(t.completed_at?t.completed_at.slice(0,10):(t.end_date||'')),reportReference(t),reportRemarks(t)]},
+    {key:'5S Work',name:'2. 5S Work',headers:['Sl.No','Unit','Work Name','Date','Application','Ref','Remarks'],data:t=>[t.unit||'',t.project||'',reportDate(t.completed_at?t.completed_at.slice(0,10):(t.start_date||'')),t.application||t.work_details||t.actual_activity||'',reportReference(t),reportRemarks(t)]},
+    {key:'Other Department',name:'3. Other Department Work',headers:['Sl.No','Unit','Work Name','Date','Ref','Remarks'],data:t=>[t.unit||'',t.project||'',reportDate(t.completed_at?t.completed_at.slice(0,10):(t.start_date||'')),reportReference(t),reportRemarks(t)]},
+    {key:'Training',name:'4. Training',headers:['Sl.No','Unit','Work Name','Date','Application','Remarks'],data:t=>[t.unit||'',t.project||'',reportDate(t.completed_at?t.completed_at.slice(0,10):(t.start_date||'')),t.application||t.work_details||t.actual_activity||'',reportRemarks(t)]}
+  ];
+  defs.forEach(d=>{
+    let sourceRows=a.filter(t=>reportSub(t)===d.key);
+    if(d.key==='Drawing'){
+      sourceRows=[...sourceRows].sort((x,y)=>{
+        const c=String(x.start_date||'').localeCompare(String(y.start_date||''));
+        if(c!==0) return c;
+        const rx=Number(x.revision_no||0), ry=Number(y.revision_no||0);
+        if(rx!==ry) return rx-ry;
+        return String(x.project||'').localeCompare(String(y.project||''));
+      });
+    }
+    const rows=sourceRows.map((t,i)=>[i+1,...d.data(t)]);
+    const ws=XLSX.utils.aoa_to_sheet([d.headers,...rows]);
+    ws['!cols']=d.headers.map((x,i)=>({wch:i===2?34:(x==='Remarks'?42:18)}));
+    XLSX.utils.book_append_sheet(wb,ws,d.name.slice(0,31));
+  });
+  const date=localISODate();
+  XLSX.writeFile(wb,`Completed_Work_Report_${date}.xlsx`);
+  msg('reportMsg','Excel report created using the supplied four-sub-category format.','ok');
+}
+function printReport(){const box=$('reportBox');if(!box||!box.innerText.trim()){msg('reportMsg','Generate the report first.','error');return}const w=window.open('','_blank','width=1100,height=800');if(!w){msg('reportMsg','Please allow pop-ups to print the report.','error');return}w.document.write(`<html><head><title>Completed Work Report</title><style>body{font-family:Arial;padding:24px}.report-table{width:100%;border-collapse:collapse;margin-bottom:18px}.report-table th,.report-table td{border:1px solid #ddd;padding:7px}.report-table th{background:#f5f5f5}</style></head><body><h1>📊 Completed Work Report</h1>${box.innerHTML}</body></html>`);w.document.close();w.focus();setTimeout(()=>w.print(),300)}
+
 async function loadRevisionTimeline(taskId){
   const box=$('revisionTimeline');if(!box)return;
   const root=tasks.find(t=>t.id===taskId);if(!root){box.innerHTML='<div class="small">No work selected.</div>';return}
   const a=tasks.filter(t=>t.project===root.project||t.parent_task_id===taskId||t.id===taskId)
     .sort((x,y)=>String(x.start_date||'').localeCompare(String(y.start_date||'')));
-  box.innerHTML=a.length?a.map((t,i)=>`<div class="timeline-item"><div class="tl-title">${i===0?'🟢 Original / First Record':'🔄 Rev.'+(t.revision_no??0)} — ${esc(t.project||'-')}</div><div class="tl-meta">📅 ${esc(t.start_date||'-')} • ${esc(t.revision_type||'Original Work')} • ${esc(t.status||'-')}</div><div class="tl-meta">${esc(t.actual_activity||t.plan_activity||t.work_details||'-')}</div>${t.revision_reason?`<div class="tl-meta">Reason: ${esc(t.revision_reason)}</div>`:''}</div>`).join(''):'<div class="small">No revision history.</div>';
+  box.innerHTML=a.length?a.map((t,i)=>`<div class="timeline-item"><div class="tl-title">${i===0?'🟢 Original / First Record':'🔄 Rev.'+(t.revision_no??0)} — ${esc(t.project||'-')}</div><div class="tl-meta">📅 ${esc(reportDate(t.start_date))} • ${esc(t.revision_type||'Original Work')} • ${esc(t.status||'-')}</div><div class="tl-meta">${esc(t.actual_activity||t.plan_activity||t.work_details||'-')}</div>${t.revision_reason?`<div class="tl-meta">Reason: ${esc(t.revision_reason)}</div>`:''}</div>`).join(''):'<div class="small">No revision history.</div>';
 }
 function renderPhase2Analytics(){
   const total=tasks.length,done=tasks.filter(t=>t.status==='Completed').length,rev=tasks.filter(t=>Number(t.revision_no||0)>0).length,h=tasks.reduce((n,t)=>n+taskHours(t),0);
@@ -1204,30 +1450,55 @@ function removeP3Category(i){
   let a=[];try{a=JSON.parse(localStorage.getItem('task_custom_categories_v1')||'[]')}catch(_){}
   a.splice(i,1);localStorage.setItem('task_custom_categories_v1',JSON.stringify(a));renderP3Categories();
 }
+function calendarDateKey(v){
+  const raw=String(v||'').trim();
+  if(!raw)return '';
+  let m=raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m)return `${m[1]}-${m[2]}-${m[3]}`;
+  m=raw.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  if(m)return `${m[3]}-${m[2]}-${m[1]}`;
+  const d=new Date(raw);
+  if(Number.isNaN(d.getTime()))return '';
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function calendarWorkName(t){
+  return 'Work';
+}
 function renderCalendar(){
-  const first=new Date(calYear,calMonth,1), last=new Date(calYear,calMonth+1,0);
+  const first=new Date(calYear,calMonth,1);
   $('calMonthTitle').textContent=first.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
-  const activeDates=new Set(tasks.filter(t=>{
-    const d=t.start_date||'';
-    return d.startsWith(`${calYear}-${String(calMonth+1).padStart(2,'0')}-`);
-  }).map(t=>t.start_date));
-  const leaveDates=new Set(leaves.filter(l=>{
-    const d=l.leave_date||'';
-    return d.startsWith(`${calYear}-${String(calMonth+1).padStart(2,'0')}-`);
-  }).map(l=>l.leave_date));
+  const monthPrefix=`${calYear}-${String(calMonth+1).padStart(2,'0')}-`;
+  const monthTasks=tasks.filter(t=>calendarDateKey(t.start_date||t.received_date||t.completed_date||t.completed_at) .startsWith(monthPrefix));
+  const workByDate={};
+  monthTasks.forEach(t=>{
+    const d=calendarDateKey(t.start_date||t.received_date||t.completed_date||t.completed_at);
+    if(!d)return;
+    (workByDate[d]||(workByDate[d]=[])).push(calendarWorkName(t));
+  });
+  const activeDates=new Set(Object.keys(workByDate));
+  const leaveByDate={};
+  leaves.filter(l=>calendarDateKey(l.leave_date).startsWith(monthPrefix)).forEach(l=>{
+    const d=calendarDateKey(l.leave_date);
+    if(d)leaveByDate[d]=true;
+  });
+  const leaveDates=new Set(Object.keys(leaveByDate));
   const grid=$('monthCalendarGrid'); let s='';
   const offset=first.getDay();
-  const prevLast=new Date(calYear,calMonth,0).getDate();
   for(let i=0;i<42;i++){
     const dayNum=i-offset+1;
-    let dateObj=new Date(calYear,calMonth,dayNum);
+    const dateObj=new Date(calYear,calMonth,dayNum);
     const iso=`${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
     const muted=dateObj.getMonth()!==calMonth;
-    const isActive=activeDates.has(iso), isLeave=leaveDates.has(iso), isToday=iso===today;
+    const names=workByDate[iso]||[];
+    const isActive=names.length>0, isLeave=leaveDates.has(iso), isToday=iso===today;
     const isSunday=dateObj.getDay()===0;
     let cls='calDay'+(muted?' muted':'')+(isActive?' activeDay':'')+(isLeave?' leaveDay':'')+(isSunday?' weeklyOffDay':'')+(isToday?' todayDay':'');
-    const sundayLabel=isSunday?(isActive?'<span class="calDot">Sunday Work</span>':'<span class="calDot">Weekly Off</span>'):'';
-    s+=`<div class="${cls}" onclick="addWorkFromCalendar('${iso}')" title="Click to add work for ${iso}">${dateObj.getDate()}${isActive?'<span class="calDot">Work</span>':''}${isLeave?'<span class="calDot">Leave</span>':''}${sundayLabel}</div>`;
+    const sundayLabel=isSunday?'<span class="calDot">Weekly Off</span>':'';
+    const titleParts=[];
+    if(isActive)titleParts.push('Work Received');
+    if(isLeave)titleParts.push('Leave');
+    if(!titleParts.length)titleParts.push(`Click to add work for ${iso}`);
+    s+=`<div class="${cls}" onclick="addWorkFromCalendar('${iso}')" title="${esc(titleParts.join(' | '))}">${dateObj.getDate()}${isLeave?'<span class="calDot">Leave</span>':''}${sundayLabel}</div>`;
   }
   grid.innerHTML=s;
   $('activeDayCount').textContent=activeDates.size;
@@ -1399,6 +1670,28 @@ function getWorkSubCategory(){
 
 <script id="phase4-script">
 (function(){
+const UNIT_VISIT_KEY='assistant_manager_unit_visits_v1';
+function getUnitVisits(){try{const a=JSON.parse(localStorage.getItem(UNIT_VISIT_KEY)||'[]');return Array.isArray(a)?a:[]}catch(_){return []}}
+function setUnitVisits(a){localStorage.setItem(UNIT_VISIT_KEY,JSON.stringify(a||[]))}
+function uvDate(v){return reportDate(v)}
+function uvDuration(a,b){if(!a||!b)return '-';const start=new Date((a.date||'')+'T'+(a.time||'00:00'));const end=new Date((b.date||'')+'T'+(b.time||'00:00'));if(Number.isNaN(start.getTime())||Number.isNaN(end.getTime()))return '-';const m=Math.round((end-start)/60000);if(m<0)return '-';return formatMinutes(m)}
+function initUnitVisitForm(){if(!$('uvDepartureDate'))return;if(!$('uvDepartureDate').value)$('uvDepartureDate').value=today;if(!$('uvHomeUnit').value)$('uvHomeUnit').value='Tirunelveli Unit'}
+function clearUnitVisitForm(){const f=$('unitVisitForm');if(!f)return;f.reset();$('uvEditingId').value='';$('uvHomeUnit').value='Tirunelveli Unit';$('uvDepartureDate').value=today;$('uvSaveBtn').textContent='💾 Save Unit Visit';$('uvCancelBtn').classList.add('hidden');$('unitVisitMsg').innerHTML=''}
+function cancelUnitVisitEdit(){clearUnitVisitForm()}
+function editUnitVisit(id){const v=getUnitVisits().find(x=>x.id===id);if(!v)return;showTab('unitVisit',document.querySelector('nav button[onclick*="unitVisit"]'));$('uvEditingId').value=v.id;$('uvHomeUnit').value=v.home_unit||'Tirunelveli Unit';$('uvVisitUnit').value=v.visit_unit||'Madurai Unit';$('uvPurpose').value=v.purpose||'';$('uvDepartureDate').value=v.departure_date||today;$('uvDepartureTime').value=v.departure_time||'';$('uvReturnDate').value=v.return_date||'';$('uvReturnTime').value=v.return_time||'';$('uvRemarks').value=v.remarks||'';$('uvSaveBtn').textContent='💾 Update Unit Visit';$('uvCancelBtn').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
+function deleteUnitVisit(id){if(!confirm('Delete this Unit Visit record?'))return;setUnitVisits(getUnitVisits().filter(x=>x.id!==id));renderUnitVisits()}
+function renderUnitVisits(){const box=$('unitVisitList');if(!box)return;const q=($('unitVisitSearch')?.value||'').trim().toLowerCase();let a=getUnitVisits().filter(v=>!q||[v.home_unit,v.visit_unit,v.purpose,v.remarks,v.departure_date,v.return_date].filter(Boolean).join(' ').toLowerCase().includes(q));a.sort((x,y)=>String(y.departure_date||'').localeCompare(String(x.departure_date||''))||String(y.departure_time||'').localeCompare(String(x.departure_time||'')));box.innerHTML=a.length?a.map(v=>{const returned=!!(v.return_date&&v.return_time);const dur=returned?uvDuration({date:v.departure_date,time:v.departure_time},{date:v.return_date,time:v.return_time}):'-';return `<div class="task"><h3>🚗 ${esc(v.visit_unit||'-')} <span class="badge ${returned?'done':'progress'}">${returned?'Returned':'On Visit'}</span></h3><div class="meta"><b>From:</b> ${esc(v.home_unit||'Tirunelveli Unit')} • <b>Purpose:</b> ${esc(v.purpose||'-')}<br><b>Departure:</b> ${esc(uvDate(v.departure_date))} ${esc(v.departure_time||'')}<br><b>Return:</b> ${returned?esc(uvDate(v.return_date))+' '+esc(v.return_time):'Not returned'} • <b>Duration:</b> ${esc(dur)}${v.remarks?'<br>Remarks: '+esc(v.remarks):''}</div><div class="actions"><button class="secondary smallbtn" onclick="editUnitVisit('${esc(v.id)}')">✏️ Edit</button>${!returned?`<button class="primary smallbtn" onclick="markUnitVisitReturned('${esc(v.id)}')">🏠 Mark Returned</button>`:''}<button class="secondary smallbtn" onclick="deleteUnitVisit('${esc(v.id)}')">🗑️ Delete</button></div></div>`}).join(''):'<p>No Unit Visit records.</p>'}
+function markUnitVisitReturned(id){const a=getUnitVisits();const v=a.find(x=>x.id===id);if(!v)return;const now=new Date();v.return_date=localISODate(now);v.return_time=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');v.updated_at=now.toISOString();setUnitVisits(a);renderUnitVisits()}
+$('unitVisitForm').onsubmit=e=>{e.preventDefault();const a=getUnitVisits();const id=$('uvEditingId').value||('uv_'+Date.now()+'_'+Math.random().toString(36).slice(2,8));const row={id,home_unit:'Tirunelveli Unit',visit_unit:$('uvVisitUnit').value,purpose:$('uvPurpose').value.trim(),departure_date:$('uvDepartureDate').value,departure_time:$('uvDepartureTime').value,return_date:$('uvReturnDate').value||'',return_time:$('uvReturnTime').value||'',remarks:$('uvRemarks').value.trim(),updated_at:new Date().toISOString()};const i=a.findIndex(x=>x.id===id);if(i>=0)a[i]=row;else{row.created_at=new Date().toISOString();a.push(row)}setUnitVisits(a);renderUnitVisits();clearUnitVisitForm();$('unitVisitMsg').innerHTML='<div class="success">Unit Visit saved successfully.</div>'};
+  // Expose Unit Visit handlers because the cards use inline onclick handlers and the main app calls these functions.
+  window.initUnitVisitForm=initUnitVisitForm;
+  window.clearUnitVisitForm=clearUnitVisitForm;
+  window.cancelUnitVisitEdit=cancelUnitVisitEdit;
+  window.editUnitVisit=editUnitVisit;
+  window.deleteUnitVisit=deleteUnitVisit;
+  window.renderUnitVisits=renderUnitVisits;
+  window.markUnitVisitReturned=markUnitVisitReturned;
+
   const P4_PERM_KEY='task_permissions_v2_'+(()=>{try{return (user&&user.id)||'guest'}catch(_){return 'guest'}})();
   const P4_CAT_KEY='task_custom_categories_v2';
   const p4ReadPerms=()=>{try{const p=JSON.parse(localStorage.getItem(P4_PERM_KEY)||'{}');return {Inbox:p.Inbox!==false,MyWork:p.MyWork!==false,Complete:p.Complete!==false,Reports:p.Reports!==false}}catch(_){return {Inbox:true,MyWork:true,Complete:true,Reports:true}}};
@@ -1469,7 +1762,7 @@ function getWorkSubCategory(){
     if(!user){msg('p4BackupMsg','Please sign in first.','error');return;}
     const hist=await p4TimeRows();let cloudTimeLogs=[];
     try{if(sb&&tasks.length){const ids=tasks.map(t=>t.id).filter(Boolean);if(ids.length){const r=await sb.from('work_time_logs').select('*').in('task_id',ids);if(!r.error)cloudTimeLogs=r.data||[];}}}catch(_){}
-    const backup={app:'James R – Assistant Manager – Project Task Manager',version:'Phase-4',backup_date:new Date().toISOString(),account:user.email||'',tasks:tasks||[],reminders:reminders||[],leaves:leaves||[],daily_time_history:hist,work_time_logs:cloudTimeLogs,categories:p4Categories(),legacy_categories:(()=>{try{return JSON.parse(localStorage.getItem('task_custom_categories_v1')||'[]')}catch(_){return []}})(),permissions:p4ReadPerms()};
+    const backup={app:'James R – Assistant Manager – Project Task Manager',version:'Phase-4',backup_date:new Date().toISOString(),account:user.email||'',tasks:tasks||[],reminders:reminders||[],leaves:leaves||[],daily_time_history:hist,work_time_logs:cloudTimeLogs,categories:p4Categories(),legacy_categories:(()=>{try{return JSON.parse(localStorage.getItem('task_custom_categories_v1')||'[]')}catch(_){return []}})(),permissions:p4ReadPerms(),unit_visits:getUnitVisits()};
     const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Assistant_Manager_Task_Manager_Phase4_Backup_'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);msg('p4BackupMsg','Complete Backup created successfully.','ok');
   };
 
@@ -1486,6 +1779,7 @@ function getWorkSubCategory(){
       if(d.daily_time_history)localStorage.setItem('task_daily_time_history_v2',JSON.stringify(d.daily_time_history));
       if(Array.isArray(d.categories))localStorage.setItem(P4_CAT_KEY,JSON.stringify(d.categories));
       if(d.permissions&&typeof d.permissions==='object')p4SavePerms({Inbox:d.permissions.Inbox!==false,MyWork:d.permissions.MyWork!==false,Complete:d.permissions.Complete!==false,Reports:d.permissions.Reports!==false});
+      if(Array.isArray(d.unit_visits))setUnitVisits(d.unit_visits);
       if(Array.isArray(d.work_time_logs)&&d.work_time_logs.length){try{const rows=d.work_time_logs.map(x=>{const y={...x};delete y.created_at;y.created_by=user.id;return y});const r=await sb.from('work_time_logs').upsert(rows,{onConflict:'id'});if(!r.error)wc=rows.length;}catch(_){} }
       await loadAll();phase4RenderCategories();p4LoadPermissionUI();phase4RefreshAnalytics();msg('p4BackupMsg',`Restore completed: ${tc} Tasks, ${rc} Reminders, ${lc} Leave entries, ${wc} cloud time logs processed.`,'ok');
     }catch(e){msg('p4BackupMsg','Restore failed: '+(e.message||e),'error');}finally{input.value='';}
