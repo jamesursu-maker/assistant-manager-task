@@ -548,7 +548,7 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 </div>
 <div class="card">
   <h3>📋 Unit Visit History</h3>
-  <div class="toolbar"><input id="unitVisitSearch" placeholder="🔎 Search Unit / Purpose..." oninput="renderUnitVisits()"></div>
+  <div class="toolbar"><input id="unitVisitSearch" placeholder="🔎 Search Unit / Purpose..." oninput="renderUnitVisits()"><button type="button" class="secondary smallbtn" onclick="refreshUnitVisitsMobile()">🔄 Refresh History</button></div>
   <div id="unitVisitList"></div>
 </div>
 </section>
@@ -661,7 +661,10 @@ function showTab(id,btn){
   if(id==='unitVisit'){initUnitVisitForm();renderUnitVisits();}
   if(id==='plus'){plusInit();}
 }
-async function loadAll(){await loadTasks();await loadReminders();await loadLeaves();if(window.loadUnitVisitsCloud)await window.loadUnitVisitsCloud();populateRelatedWork();renderDashboard();renderInbox();renderMyWork();renderReminders();renderLeaves();renderUnitVisits();populateCompletedMyWork();renderCompletedTasks();if(typeof plusRenderPersonMaster==='function')plusRenderPersonMaster();if(typeof plusRenderGivenBy==='function')plusRenderGivenBy()}
+async function loadAll(){await loadTasks();await loadReminders();await loadLeaves();if(window.loadUnitVisitsCloud)await window.loadUnitVisitsCloud();populateRelatedWork();renderDashboard();renderInbox();renderMyWork();renderReminders();renderLeaves();renderUnitVisits();populateCompletedMyWork();renderCompletedTasks();if(typeof plusRenderPersonMaster==='function')plusRenderPersonMaster();if(typeof plusRenderGivenBy==='function')plusRenderGivenBy();
+  // Mobile/PWA can restore the auth session a moment after page load; refresh travel history once more.
+  if(window.loadUnitVisitsCloud){setTimeout(async()=>{try{await window.loadUnitVisitsCloud();renderUnitVisits();}catch(_){ }},1200);}
+}
 async function loadTasks(){
   const r=await sb.from('tasks').select('*').order('start_date',{ascending:false}).order('created_at',{ascending:false});
   if(r.error){msg('setupMsg','Database error: '+r.error.message,'error');return}
@@ -1831,15 +1834,26 @@ let unitVisitsCloudReady=false;
 function getUnitVisits(){try{const a=JSON.parse(localStorage.getItem(UNIT_VISIT_KEY)||'[]');return Array.isArray(a)?a:[]}catch(_){return []}}
 function setUnitVisits(a){localStorage.setItem(UNIT_VISIT_KEY,JSON.stringify(a||[]))}
 async function loadUnitVisitsCloud(){
-  if(!user||!sb)return getUnitVisits();
+  const local=getUnitVisits();
+  if(!user||!sb){return local;}
   try{
-    const r=await sb.from('unit_visits').select('*').eq('created_by',user.id).order('departure_date',{ascending:false}).order('departure_time',{ascending:false});
-    if(r.error) { unitVisitsCloudReady=false; return getUnitVisits(); }
+    let r=await sb.from('unit_visits').select('*').eq('created_by',user.id).order('departure_date',{ascending:false}).order('departure_time',{ascending:false});
+    if(r.error){
+      // Retry once after authentication/session has settled on mobile PWA.
+      await new Promise(res=>setTimeout(res,400));
+      r=await sb.from('unit_visits').select('*').eq('created_by',user.id).order('departure_date',{ascending:false}).order('departure_time',{ascending:false});
+    }
+    if(r.error){unitVisitsCloudReady=false;return local;}
     unitVisitsCloudReady=true;
-    const rows=Array.isArray(r.data)?r.data:[];
+    const cloud=Array.isArray(r.data)?r.data:[];
+    // Merge local and cloud instead of overwriting local records. This prevents a mobile
+    // session from hiding locally saved visits when cloud loading is delayed.
+    const map=new Map();
+    [...local,...cloud].forEach(v=>{if(v&&v.id)map.set(String(v.id),v);});
+    const rows=Array.from(map.values()).sort((a,b)=>String(b.departure_date||'').localeCompare(String(a.departure_date||''))||String(b.departure_time||'').localeCompare(String(a.departure_time||'')));
     setUnitVisits(rows);
     return rows;
-  }catch(_){unitVisitsCloudReady=false;return getUnitVisits();}
+  }catch(_){unitVisitsCloudReady=false;return local;}
 }
 async function saveUnitVisitCloud(row){
   if(!user||!sb)return false;
@@ -1873,6 +1887,8 @@ $('unitVisitForm').onsubmit=async e=>{e.preventDefault();const a=getUnitVisits()
   window.renderUnitVisits=renderUnitVisits;
   window.markUnitVisitReturned=markUnitVisitReturned;
   window.loadUnitVisitsCloud=loadUnitVisitsCloud;
+  async function refreshUnitVisitsMobile(){const box=$('unitVisitList');if(box)box.innerHTML='<p>Loading Unit Visit History...</p>';const rows=await loadUnitVisitsCloud();renderUnitVisits();if($('unitVisitMsg'))$('unitVisitMsg').innerHTML='<div class="msg ok">'+(unitVisitsCloudReady?'Unit Visit History refreshed from cloud.':'Showing available local Unit Visit History.')+'</div>';return rows;}
+  window.refreshUnitVisitsMobile=refreshUnitVisitsMobile;
 
   const P4_PERM_KEY='task_permissions_v2_'+(()=>{try{return (user&&user.id)||'guest'}catch(_){return 'guest'}})();
   const P4_CAT_KEY='task_custom_categories_v2';
