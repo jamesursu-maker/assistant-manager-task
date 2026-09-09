@@ -124,6 +124,9 @@ button.primary{background:#17365d;color:#fff;border:0;border-radius:8px;padding:
 <style id="assign-work-ui-v1">
 #assignWorkFormWrap.hidden{display:none!important}
 </style>
+<style id="plus-features-css">
+.plus-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}.plus-card{background:#fff;border:1px solid #dfe6ee;border-radius:12px;padding:14px;box-shadow:0 2px 7px #0000000a}.plus-card h3{margin:0 0 8px}.plus-stat{font-size:25px;font-weight:800}.plus-muted{color:#667085;font-size:12px}.plus-table{width:100%;border-collapse:collapse;font-size:13px}.plus-table th,.plus-table td{border:1px solid #e1e6eb;padding:7px;text-align:left}.plus-table th{background:#f4f7fa}.plus-scroll{overflow:auto;max-height:430px}.plus-tag{display:inline-block;padding:3px 7px;border-radius:10px;background:#edf2f7;margin:2px;font-size:11px}.plus-danger{font-weight:700}.plus-ok{font-weight:700}.plus-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.plus-file{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px;border:1px solid #e1e6eb;border-radius:8px;margin:6px 0}.plus-note{padding:8px;border-left:4px solid #17365d;background:#f8fafc;margin:7px 0;border-radius:6px}
+</style>
 </head>
 <body>
 <header class="appHeader">
@@ -159,6 +162,7 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 <button onclick="showTab('tasks',this)">📚 All Tasks</button>
 <button onclick="showTab('report',this)">📊 Reports</button>
 <button onclick="showTab('unitVisit',this)">🚗 Unit Visit / Travel</button>
+<button onclick="showTab('plus',this)">📈 Work Management Plus</button>
 
 <button onclick="showTab('backup',this)">💾 Backup / Restore</button>
 <button onclick="logout()">Logout</button>
@@ -218,7 +222,7 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 
 <div class="grid">
 <div><label>Received Date</label><input type="date" id="wReceived" required></div>
-<div><label>Given By</label><input id="wGivenBy" placeholder="Manager / Person name" required></div>
+<div><label>Given By</label><select id="wGivenBy" required onchange="personSyncAssignment()"><option value="">-- Select Person --</option></select><div class="small" style="margin-top:4px">Select the Given By person from Person Master.</div></div>
 <div><label>Unit</label><select id="wUnit"><option>Tirunelveli Unit</option><option>Madurai Unit</option><option>Namakkal Unit</option><option>Karaikal Unit</option><option>Pollachi Unit</option><option>Mattaparai Unit</option><option>Salem Unit</option><option>Alangudi Unit</option><option>Head Office</option><option>Manalur Unit</option><option>Other Units</option></select></div>
 <div><label>Project / Work</label><input id="wProject" required></div>
 <div><label>Work Category</label><select id="wCategory"><option>New Project</option><option>Existing Project Upgrade</option><option>Drawing</option><option>3D Design</option><option>Estimation</option><option>Budget</option><option>Material Calculation</option><option>Site Visit</option><option>Measurement</option><option>Labour / Fabrication Billing</option><option>Training</option><option>Reporting</option><option>Other</option></select>
@@ -293,16 +297,26 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 
 <section id="task" class="hidden"><div class="card"><h2 id="formTitle">New Daily Activity</h2><form id="taskForm">
 <input type="hidden" id="editingId">
+<!-- Hidden task metadata fields: assignment/category data is not asked again in Daily Activity.
+     They exist only so the common save/edit handler remains safe. -->
+<input type="hidden" id="unit">
+<input type="hidden" id="project">
+<input type="hidden" id="category">
+<input type="hidden" id="revisionNo" value="0">
+<input type="hidden" id="revisionType" value="Original Work">
 <div class="grid">
-<div><label>Start Date</label><input type="date" id="date" required></div>
-<div><label>Unit</label><select id="unit"><option>Tirunelveli Unit</option><option>Madurai Unit</option><option>Namakkal Unit</option><option>Karaikal Unit</option><option>Pollachi Unit</option><option>Mattaparai Unit</option><option>Salem Unit</option><option>Alangudi Unit</option><option>Head Office</option><option>Manalur Unit</option><option>Other Units</option></select></div>
-<div><label>Project / Work</label><input id="project" required></div>
-<div><label>Related Work</label><select id="relatedWork"><option value="">None / Direct Activity</option></select></div>
-<div><label>Revision Type</label><select id="revisionType"><option>Original Work</option><option>Correction / Revision</option><option>Additional Work</option><option>Rework</option><option>Follow-up</option><option>New Requirement</option></select></div>
-<div><label>Revision No.</label><input id="revisionNo" value="0" readonly></div>
-<div><label>Work Category</label><select id="category"><option>Drawing</option><option>3D Design</option><option>Flex / Poster / Sticker</option><option>Estimation</option><option>Budget</option><option>Material Calculation</option><option>Site Visit</option><option>Measurement</option><option>Labour / Fabrication Billing</option><option>System Work</option><option>Training</option><option>Reporting</option><option>New Project</option><option>Existing Project Upgrade</option><option>Other</option></select></div>
-<div><label>Plan Activity</label><input id="planned" placeholder="What was planned?"></div>
-<div><label>Actual Activity</label><input id="actual" placeholder="What was actually done?"></div>
+<div><label>Select My Work</label><select id="activityWorkSelect" required onchange="loadActivityWork()"><option value="">-- Select My Work --</option></select></div>
+<div id="completedEditMeta" class="hidden" style="grid-column:1/-1;padding:12px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc">
+  <b>✏️ Completed Work Category Update</b>
+  <div class="grid" style="margin-top:8px">
+    <div><label>Work Category</label><select id="editCompletedCategory"></select></div>
+    <div><label>Work Sub Category</label><select id="editCompletedSubCategory"><option value="">Select Work Sub Category</option><option value="Drawing">1. Drawing</option><option value="5S Work">2. 5S Work</option><option value="Other Department">3. Other Department</option><option value="Training">4. Training</option></select></div>
+  </div>
+  <div class="small" style="margin-top:6px">These fields appear only when editing a Completed Work. The changed values will be used in Completed History and Reports.</div>
+</div>
+<div><label>Work Date</label><input type="date" id="date" required></div>
+<div><label>Plan Activity</label><input id="planned" placeholder="What is planned for today?"></div>
+<div><label>Actual Activity</label><input id="actual" placeholder="What was actually done today?"></div>
 <div><label>Start Time (Today)</label><input type="time" id="start"></div><div><label>End Time (Today)</label><input type="time" id="end"></div>
 <div><label>Status</label><select id="status"><option>In Progress</option><option>Completed</option><option>Pending</option></select></div>
 <div><label>Site Visit / Travel</label><select id="travel"><option>No</option><option>Yes</option></select></div>
@@ -347,10 +361,26 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 <div><label>To Date</label><input type="date" id="cTo" onchange="renderCompletedTasks()"></div>
 <div><label>Unit</label><select id="cFilterUnit" onchange="renderCompletedTasks()"><option>All</option><option>Tirunelveli Unit</option><option>Madurai Unit</option><option>Namakkal Unit</option><option>Karaikal Unit</option><option>Pollachi Unit</option><option>Mattaparai Unit</option><option>Salem Unit</option><option>Alangudi Unit</option><option>Head Office</option><option>Manalur Unit</option><option>Other Units</option></select></div>
 </div>
-<div class="info" style="margin-top:10px"><b>📌 Completed Work Sub Category</b><br>Select the correct Sub Category for each completed work below and click <b>Save</b>. After assigning all Sub Categories, go to <b>Reports → Generate Report → Export Excel</b>.</div>
-<div class="actions" style="margin-top:10px"><button class="primary" type="button" onclick="saveAllCompletedSubCategories()">💾 Save All Sub Categories</button></div>
 <div id="completedTaskList"></div></div>
 </section>
+<section id="plus" class="hidden">
+<div class="card"><h2>📈 Work Management Plus</h2><div class="small">Only Person Wise Summary and Unit Wise Work are shown here. Existing Reports section is unchanged.</div></div>
+<div class="plus-grid">
+  <div class="plus-card"><h3>👤 Person Wise Summary</h3><div id="plusGivenBy"></div></div>
+  <div class="plus-card"><h3>🏢 Unit Wise Work</h3><div id="plusUnitWise"></div></div>
+</div>
+<div class="plus-card" style="margin-top:12px"><h3>👤 Person Master</h3>
+  <div class="grid">
+    <div><label>Select Existing Person</label><select id="plusPersonSelect" onchange="plusLoadPerson()"><option value="">-- Select Person --</option></select></div>
+    <div><label>Name</label><input id="plusPersonName" placeholder="Person Name"></div>
+    <div><label>Designation</label><input id="plusPersonDesignation" placeholder="Designation"></div>
+  </div>
+  <div class="actions"><button class="primary" type="button" onclick="plusAddPerson()">➕ Add Person</button><button class="secondary" type="button" onclick="plusEditPerson()">✏️ Modify</button><button class="danger" type="button" onclick="plusDeletePerson()">🗑️ Delete</button><button class="secondary" type="button" onclick="plusClearPerson()">Clear</button></div>
+  <div id="plusPersonMsg"></div>
+  <div class="small" style="margin-top:8px">Existing Given By names are automatically included here. Person Master names are used in the Given By dropdown when assigning new work.</div>
+</div>
+</section>
+
 <section id="tasks" class="hidden"><div class="card"><h2>Task List</h2><div class="grid"><div><label>Start Date</label><input type="date" id="filterDate" onchange="renderTasks()"></div><div><label>Unit</label><select id="filterUnit" onchange="renderTasks()"><option>All</option><option>Tirunelveli Unit</option><option>Madurai Unit</option><option>Namakkal Unit</option><option>Karaikal Unit</option><option>Pollachi Unit</option><option>Mattaparai Unit</option><option>Salem Unit</option><option>Alangudi Unit</option><option>Head Office</option><option>Manalur Unit</option><option>Other Units</option></select></div></div><div id="allTasks"></div></div></section>
 
 
@@ -552,8 +582,32 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 let sb=null,user=null,tasks=[],reminders=[],leaves=[];
 const SUBCAT_STORAGE_KEY='completed_work_subcategories_v1';
 function getSubcatMap(){try{return JSON.parse(localStorage.getItem(SUBCAT_STORAGE_KEY)||'{}')}catch(e){return {}}}
-function setSubcatLocal(id,value){const m=getSubcatMap();m[String(id)]=value;localStorage.setItem(SUBCAT_STORAGE_KEY,JSON.stringify(m));}
-function getEffectiveSubcat(t){const m=getSubcatMap();return String(m[String(t.id)]||t.work_sub_category||'').trim();}
+function setSubcatLocal(id,value){const m=getSubcatMap();m[String(id)]=String(value||'');localStorage.setItem(SUBCAT_STORAGE_KEY,JSON.stringify(m));}
+function clearSubcatLocal(id){const m=getSubcatMap();delete m[String(id)];localStorage.setItem(SUBCAT_STORAGE_KEY,JSON.stringify(m));}
+function getEffectiveSubcat(t){const m=getSubcatMap();return String((m[String(t.id)]!==undefined?m[String(t.id)]:t.work_sub_category)||'').trim();}
+function populateCompletedCategoryOptions(selected){
+  const el=document.getElementById('editCompletedCategory');
+  if(!el)return;
+  const values=[];
+  const add=(value,text=value)=>{
+    value=String(value||'').trim();
+    if(value && !values.some(v=>v.value===value)) values.push({value,text:String(text||value)});
+  };
+  // Keep the normal Work Inbox category list available.
+  ['New Project','Existing Project Upgrade','Drawing','3D Design','Estimation','Budget','Material Calculation','Site Visit','Measurement','Labour / Fabrication Billing','Training','Reporting','Other','Flex / Poster / Sticker'].forEach(x=>add(x));
+  // Include all custom categories created in Settings.
+  try{
+    const custom=JSON.parse(localStorage.getItem('task_custom_categories_v2')||'[]');
+    if(Array.isArray(custom)) custom.forEach(x=>add(x));
+  }catch(_){}
+  // Include any categories currently configured in Work Inbox.
+  const source=document.getElementById('wCategory');
+  if(source) Array.from(source.options).forEach(o=>add(o.value,o.textContent));
+  if(selected) add(selected);
+  el.innerHTML=values.map(v=>`<option value="${esc(v.value)}">${esc(v.text)}</option>`).join('');
+  el.value=String(selected||'');
+}
+
 let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
 function localISODate(d=new Date()){const y=d.getFullYear();const m=String(d.getMonth()+1).padStart(2,'0');const day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`}
 const today=localISODate();
@@ -605,8 +659,9 @@ function showTab(id,btn){
   if(id==='attendance')renderAttendance();
   if(id==='backup')renderBackupInfo();
   if(id==='unitVisit'){initUnitVisitForm();renderUnitVisits();}
+  if(id==='plus'){plusInit();}
 }
-async function loadAll(){await loadTasks();await loadReminders();await loadLeaves();populateRelatedWork();renderDashboard();renderInbox();renderMyWork();renderReminders();renderLeaves();renderUnitVisits();populateCompletedMyWork();renderCompletedTasks()}
+async function loadAll(){await loadTasks();await loadReminders();await loadLeaves();if(window.loadUnitVisitsCloud)await window.loadUnitVisitsCloud();populateRelatedWork();renderDashboard();renderInbox();renderMyWork();renderReminders();renderLeaves();renderUnitVisits();populateCompletedMyWork();renderCompletedTasks();if(typeof plusRenderPersonMaster==='function')plusRenderPersonMaster();if(typeof plusRenderGivenBy==='function')plusRenderGivenBy()}
 async function loadTasks(){
   const r=await sb.from('tasks').select('*').order('start_date',{ascending:false}).order('created_at',{ascending:false});
   if(r.error){msg('setupMsg','Database error: '+r.error.message,'error');return}
@@ -741,10 +796,25 @@ function closeAssignWorkForm(){
   const btn=$('assignWorkBtn'); if(btn){btn.classList.remove('hidden');btn.style.display='inline-flex';}
   clearInboxForm();
 }
-function renderInbox(){const q=($('inboxSearch')?.value||'').trim();const a=tasks.filter(t=>t.workflow_status==='Pending Assignment'&&taskSearchMatch(t,q));$('pendingList').innerHTML=a.length?a.map(t=>`<div class="task"><h3>${esc(t.project)} ${priorityBadge(t.priority)} ${revisionBadge(t.revision_no??0)} ${dueBadge(t)}</h3><div class="meta"><b>${esc(t.unit)}</b> • Received: ${esc(reportDate(t.received_date||t.start_date))}<br>Given By: ${esc(t.assigned_by||'-')}<br>Category: ${esc(t.category)}${t.work_sub_category?' • Sub Category: '+esc(t.work_sub_category):''}<br>Due: ${esc(reportDate(t.due_date||''))}<br>Details: ${esc(t.work_details||'-')}</div><div class="actions"><button class="primary smallbtn" onclick="pickWork('${t.id}')">▶️ Pick / Start Work</button><button class="secondary smallbtn pickhide-btn" onclick="pickWork('${t.id}')" title="Pick this work and hide it from Work Inbox">📥 Pick to Hide</button><button class="secondary smallbtn" onclick="editInboxWork('${t.id}')">✏️ Edit</button></div></div>`).join(''):'<p>No pending assigned work matching your search.</p>'}
+function renderInbox(){const q=($('inboxSearch')?.value||'').trim();const a=tasks.filter(t=>t.workflow_status==='Pending Assignment'&&taskSearchMatch(t,q));$('pendingList').innerHTML=a.length?a.map(t=>`<div class="task"><h3>${esc(t.project)} ${priorityBadge(t.priority)} ${revisionBadge(t.revision_no??0)} ${dueBadge(t)}</h3><div class="meta"><b>${esc(t.unit)}</b> • Received: ${esc(reportDate(t.received_date||t.start_date))}<br>Given By: ${esc(t.assigned_by||'-')}<br>Category: ${esc(t.category)}${getEffectiveSubcat(t)?' • Sub Category: '+esc(reportSub(t)):''}<br>Due: ${esc(reportDate(t.due_date||''))}<br>Details: ${esc(t.work_details||'-')}</div><div class="actions"><button class="primary smallbtn" onclick="pickWork('${t.id}')">▶️ Pick / Start Work</button><button class="secondary smallbtn pickhide-btn" onclick="pickWork('${t.id}')" title="Pick this work and hide it from Work Inbox">📥 Pick to Hide</button><button class="secondary smallbtn" onclick="editInboxWork('${t.id}')">✏️ Edit</button></div><div id="givenby-edit-${esc(t.id)}"></div></div>`).join(''):'<p>No pending assigned work matching your search.</p>'}
 
-function renderMyWork(){const q=($('myWorkSearch')?.value||'').trim();const df=$('myWorkDueFilter')?.value||'All';const a=tasks.filter(t=>{if(!((t.workflow_status==='Picked'||t.workflow_status==='Working')&&t.status!=='Completed'))return false;if(!taskSearchMatch(t,q))return false;return df==='All'||dueState(t).key===df});$('myWorkList').innerHTML=a.length?a.map(t=>`<div class="task"><h3>${esc(t.project)} ${revisionBadge(t.revision_no??0)} ${badge(t.status)} ${dueBadge(t)}</h3><div class="meta"><b>${esc(t.unit)}</b> • First Date: ${esc(reportDate(t.start_date))}<br>Given By: ${esc(t.assigned_by||'-')} • Priority: ${esc(t.priority||'-')}<br>Workflow: ${esc(t.workflow_status||'-')} • Due: ${esc(reportDate(t.due_date||''))}<br>⏱️ Total Logged: <b>${formatMinutes(taskHours(t))}</b><br>${esc(t.actual_activity||t.work_details||'-')}</div><div class="actions">${t.workflow_status==='Picked'?`<button class="primary smallbtn" onclick="startPicked('${t.id}')">▶ Start</button>`:''}<button class="primary smallbtn" onclick="openTaskFromWork('${t.id}')">✏️ Update Work</button><button class="secondary smallbtn" onclick="deleteMyWork('${t.id}')">🗑️ Delete</button><button class="secondary smallbtn" onclick="sendBackToInbox('${t.id}')">↩️ Send Back to Work Inbox</button></div></div>`).join(''):'<p>No active work matching the selected filter.</p>'}
-
+function renderMyWork(){
+  const q=($('myWorkSearch')?.value||'').trim();
+  const df=$('myWorkDueFilter')?.value||'All';
+  const a=tasks.filter(t=>{
+    const wf=String(t.workflow_status||'').trim().toLowerCase();
+    const st=String(t.status||'').trim().toLowerCase();
+    const isCompleted=st==='completed'||wf==='completed';
+    const isPendingInbox=wf==='pending assignment';
+    if(isCompleted||isPendingInbox)return false;
+    const isActive=['picked','working','in progress','inprogress','active'].includes(wf)||['in progress','working','picked','active'].includes(st)||(!wf&&st!=='completed');
+    if(!isActive)return false;
+    if(!taskSearchMatch(t,q))return false;
+    return df==='All'||dueState(t).key===df;
+  });
+  a.sort((x,y)=>new Date(y.updated_at||y.created_at||y.start_date||0)-new Date(x.updated_at||x.created_at||x.start_date||0));
+  $('myWorkList').innerHTML=a.length?a.map(t=>`<div class="task"><h3>${esc(t.project)} ${revisionBadge(t.revision_no??0)} ${badge(t.status)} ${dueBadge(t)}</h3><div class="meta"><b>${esc(t.unit)}</b> • First Date: ${esc(reportDate(t.start_date))}<br>Given By: ${esc(t.assigned_by||'-')} • Priority: ${esc(t.priority||'-')} • Sub Category: ${esc(reportSub(t)||'-')}<br>Workflow: ${esc(t.workflow_status||'-')} • Due: ${esc(reportDate(t.due_date||''))}<br>⏱️ Total Logged: <b>${formatMinutes(taskHours(t))}</b><br>${esc(t.actual_activity||t.work_details||'-')}</div><div class="actions">${t.workflow_status==='Picked'?`<button class="primary smallbtn" onclick="startPicked('${t.id}')">▶ Start</button>`:''}<button class="primary smallbtn" onclick="openTaskFromWork('${t.id}')">✏️ Update Work</button><button class="secondary smallbtn" onclick="deleteMyWork('${t.id}')">🗑️ Delete</button><button class="secondary smallbtn" onclick="sendBackToInbox('${t.id}')">↩️ Send Back to Work Inbox</button></div><div id="givenby-edit-${esc(t.id)}"></div></div>`).join(''):'<p>No active work matching the selected filter.</p>';
+}
 async function deleteMyWork(id){
   const t=tasks.find(x=>x.id===id);if(!t)return;
   if(!confirm('Delete this work from My Work List? This will permanently delete the task.'))return;
@@ -846,7 +916,8 @@ $('inboxForm').onsubmit=async e=>{
   const subCategory=$('workSubCategory')?.value||'';
   // The current Supabase tasks table may not contain work_sub_category.
   // Keep Sub Category in the browser map, while sending only schema-safe task fields to Supabase.
-  const data={
+  plusEnsurePersonName($('wGivenBy').value);
+const data={
     start_date:$('wReceived').value,
     unit:$('wUnit').value,
     project:$('wProject').value,
@@ -864,7 +935,7 @@ $('inboxForm').onsubmit=async e=>{
     // Edit only updates the pending assignment details; workflow/status remain unchanged.
     r=await sb.from('tasks').update(data).eq('id',editingInboxTaskId);
     if(r.error){msg('inboxMsg',r.error.message,'error');return}
-    if(subCategory) setSubcatLocal(editingInboxTaskId,subCategory);
+    if(subCategory) { setSubcatLocal(editingInboxTaskId,subCategory); try { await sb.from('tasks').update({work_sub_category:subCategory}).eq('id',editingInboxTaskId); } catch(_){} }
     const localTask=tasks.find(x=>x.id===editingInboxTaskId);
     if(localTask){Object.assign(localTask,data); if(subCategory)localTask.work_sub_category=subCategory;}
   }else{
@@ -888,7 +959,7 @@ $('inboxForm').onsubmit=async e=>{
     });
     if(r.error){msg('inboxMsg',r.error.message,'error');return}
     const newTask=Array.isArray(r.data)?r.data[0]:r.data;
-    if(newTask && subCategory) setSubcatLocal(newTask.id,subCategory);
+    if(newTask && subCategory) { setSubcatLocal(newTask.id,subCategory); try { await sb.from('tasks').update({work_sub_category:subCategory}).eq('id',newTask.id); } catch(_){} }
   }
 
   msg('inboxMsg',editingInboxTaskId?'Work updated successfully.':'Work added to Pending Work.','ok');
@@ -930,29 +1001,34 @@ function seedLegacyTaskTime(t){
 $('taskForm').onsubmit=async e=>{
   e.preventDefault();if(!user)return;
 
-  const revType=$('revisionType').value;
+  const revType=$('revisionType')?.value || 'Original Work';
   const id=$('editingId').value;
-  const existing=id?tasks.find(x=>x.id===id):null;
+  const existing=id?tasks.find(x=>String(x.id)===String(id)):null;
   const workDate=$('date').value||today;
   const startTime=$('start').value||null;
   const endTime=$('end').value||null;
 
+  const editingCompletedMeta=$('completedEditMeta') && !$('completedEditMeta').classList.contains('hidden');
+  const selectedEditCategory=editingCompletedMeta ? $('editCompletedCategory').value : $('category')?.value;
+  const selectedEditSubCategory=editingCompletedMeta ? $('editCompletedSubCategory').value : '';
   const data={
-    unit:$('unit').value,project:$('project').value,category:$('category').value,
+    unit:$('unit')?.value||existing?.unit||'',project:$('project')?.value||existing?.project||'',category:selectedEditCategory||existing?.category||'',
     plan_activity:$('planned').value,actual_activity:$('actual').value,
-    start_time:startTime,end_time:endTime,status:$('status').value,
+    start_time:existing ? (existing.start_time||null) : startTime,
+    end_time:existing ? (existing.end_time||null) : endTime,
+    status:$('status').value,
     travel:$('travel').value==='Yes',location:$('location').value,
     next_action:$('next').value,remarks:$('remarks').value,
     updated_at:new Date().toISOString(),
-    revision_no:Number($('revisionNo').value||0),revision_type:revType,
-    revision_reason:$('revisionReason').value||null,parent_task_id:$('relatedWork').value||null
+    revision_no:Number($('revisionNo')?.value||existing?.revision_no||0),revision_type:revType,
+    revision_reason:$('revisionReason').value||null
   };
 
   // IMPORTANT: while updating an existing My Work item, keep its original first/start date.
   // The selected date is used only for the new daily time-history row.
   if(!id)data.start_date=workDate;
   if($('status').value==='Completed')data.completed_at=new Date().toISOString();
-  if(id)data.workflow_status='Working';
+  if(id)data.workflow_status=(existing&&existing.status==='Completed'&&$('status').value==='Completed')?'Completed':'Working';
 
   const r=id
     ? await sb.from('tasks').update(data).eq('id',id)
@@ -961,6 +1037,27 @@ $('taskForm').onsubmit=async e=>{
   if(r.error){msg('formMsg',r.error.message,'error');return}
 
   const taskId=id||r.data?.id;
+
+  // Completed Work View/Edit can change Category + Sub Category. Category is stored in tasks;
+  // Sub Category is stored in the tasks column when available and always in the local fallback map.
+  if(taskId && editingCompletedMeta){
+    const subCategory=String(selectedEditSubCategory||'').trim();
+    // Always persist locally first so the value is immediately reflected in History/Reports.
+    if(subCategory) setSubcatLocal(taskId,subCategory); else clearSubcatLocal(taskId);
+    // Also persist to Supabase when the optional column exists.
+    try{
+      const sr=await sb.from('tasks').update({work_sub_category:subCategory||null}).eq('id',taskId);
+      if(!sr.error){
+        const localTask=tasks.find(x=>String(x.id)===String(taskId));
+        if(localTask) localTask.work_sub_category=subCategory||null;
+      }
+    }catch(_){}
+    const localTask=tasks.find(x=>String(x.id)===String(taskId));
+    if(localTask){
+      localTask.category=selectedEditCategory||localTask.category||'';
+      localTask.work_sub_category=subCategory||null;
+    }
+  }
 
   // Preserve any old single Start/End pair as Day 1 before adding today's entry.
   if(existing)seedLegacyTaskTime(existing);
@@ -995,12 +1092,49 @@ $('taskForm').onsubmit=async e=>{
 
 function clearForm(){
   $('taskForm').reset();$('editingId').value='';$('date').value=today;$('saveBtn').textContent='Save Activity';
-  $('formTitle').textContent='New Daily Activity';$('cancelEdit').classList.add('hidden');$('revisionNo').value='0';populateRelatedWork();
+  $('formTitle').textContent='New Daily Activity';$('cancelEdit').classList.add('hidden');$('revisionNo').value='0';
+  if($('completedEditMeta'))$('completedEditMeta').classList.add('hidden');
+  if($('unit'))$('unit').value=''; if($('project'))$('project').value=''; if($('category'))$('category').value='';
+  if($('revisionNo'))$('revisionNo').value='0'; if($('revisionType'))$('revisionType').value='Original Work';
+  populateRelatedWork();
 }
 function cancelEdit(){clearForm()}
+window.viewEditCompletedTask=viewEditCompletedTask;
+window.reworkCompletedTask=reworkCompletedTask;
+window.editTask=editTask;
+window.loadActivityWork=loadActivityWork;
+window.clearForm=clearForm;
 function populateRelatedWork(){
-  const s=$('relatedWork');if(!s)return;
-  s.innerHTML='<option value="">None / Direct Activity</option>'+tasks.map(t=>`<option value="${t.id}">${esc(t.project)} — Rev.${t.revision_no??0}</option>`).join('');
+  const s=$('activityWorkSelect');if(!s)return;
+  const active=tasks.filter(t=>(t.workflow_status==='Picked'||t.workflow_status==='Working')&&t.status!=='Completed');
+  s.innerHTML='<option value="">-- Select My Work --</option>'+active.map(t=>`<option value="${t.id}">${esc(t.project)} — ${esc(t.unit)} — Rev.${t.revision_no??0}</option>`).join('');
+}
+function loadActivityWork(){
+  const id=$('activityWorkSelect')?.value;
+  const t=tasks.find(x=>x.id===id);
+  if(!t)return;
+  $('editingId').value=t.id;
+  $('unit').value=t.unit||'';
+  $('project').value=t.project||'';
+  $('category').value=t.category||'';
+  $('planned').value=t.plan_activity||'';
+  $('actual').value=t.actual_activity||'';
+  $('travel').value=t.travel?'Yes':'No';
+  $('location').value=t.location||'';
+  $('next').value=t.next_action||'';
+  $('revisionNo').value=t.revision_no??0;
+  $('revisionType').value=t.revision_type||'Original Work';
+  $('revisionReason').value=t.revision_reason||'';
+  $('remarks').value=t.remarks||'';
+  $('status').value=t.status||'In Progress';
+  $('date').value=today;
+  $('start').value='';$('end').value='';
+  $('saveBtn').textContent='Update Activity';
+  $('formTitle').textContent='Edit / Update Activity';
+  $('cancelEdit').classList.remove('hidden');
+  seedLegacyTaskTime(t);
+  loadWorkTimeHistory(id);
+  loadRevisionTimeline(id);
 }
 async function editTask(id){
   const t=tasks.find(x=>x.id===id);if(!t)return;
@@ -1010,11 +1144,17 @@ async function editTask(id){
 
   $('editingId').value=t.id;
   $('date').value=today;
-  $('unit').value=t.unit;
-  $('project').value=t.project;
-  $('category').value=t.category;
   populateRelatedWork();
-  $('relatedWork').value=t.parent_task_id||'';
+  const sel=$('activityWorkSelect');
+  if(sel){
+    if(!Array.from(sel.options).some(o=>o.value===t.id)){
+      sel.insertAdjacentHTML('beforeend',`<option value="${esc(t.id)}">${esc(t.project)} — ${esc(t.unit)} — Rev.${t.revision_no??0} (Edit)</option>`);
+    }
+    sel.value=t.id;
+  }
+  $('unit').value=t.unit||'';
+  $('project').value=t.project||'';
+  $('category').value=t.category||'';
   $('planned').value=t.plan_activity||'';
   $('actual').value=t.actual_activity||'';
 
@@ -1082,7 +1222,7 @@ async function loadWorkTimeHistory(taskId){
 function createRevision(id){
   const t=tasks.find(x=>x.id===id);if(!t)return;
   $('editingId').value='';$('date').value=today;$('unit').value=t.unit;$('project').value=t.project;$('category').value=t.category;
-  populateRelatedWork();$('relatedWork').value=t.id;$('planned').value='Correction / Revision';$('actual').value='';
+  populateRelatedWork();$('activityWorkSelect').value='';$('planned').value='Correction / Revision';$('actual').value='';
   $('start').value='';$('end').value='';$('status').value='In Progress';$('travel').value=t.travel?'Yes':'No';$('location').value=t.location||'';
   $('next').value='';$('revisionNo').value=(Number(t.revision_no||0)+1);$('revisionType').value='Correction / Revision';$('revisionReason').value='';
   $('remarks').value='';$('saveBtn').textContent='Save Revision';$('formTitle').textContent='New Revision — Rev.'+$('revisionNo').value;
@@ -1125,107 +1265,71 @@ $('completedTaskForm').onsubmit=async e=>{
   msg('completedFormMsg','Work completed successfully and added to Completed Task List.','ok');
   clearCompletedForm();await loadTasks();populateCompletedMyWork();renderCompletedTasks();renderDashboard();renderMyWork();renderInbox();renderTasks();
 };
-function completedSubCategoryOptions(selected){
-  const v=reportSub({work_sub_category:selected||''});
-  return `<option value="">-- Select Sub Category --</option>
-    <option value="Drawing" ${v==='Drawing'?'selected':''}>1. Drawing</option>
-    <option value="5S Work" ${v==='5S Work'?'selected':''}>2. 5S Work</option>
-    <option value="Other Department Work" ${v==='Other Department'?'selected':''}>3. Other Department Work</option>
-    <option value="Training" ${v==='Training'?'selected':''}>4. Training</option>`;
-}
 function completedTaskHTML(t){
   const savedSub=String(getEffectiveSubcat(t)).trim();
-  const subLabel=savedSub ? reportSub({work_sub_category:savedSub}) : '';
-  const subUI=savedSub
-    ? `<div class="grid" style="margin-top:10px;align-items:end"><div><label>📂 Work Sub Category</label><div class="meta"><b>${esc(subLabel)}</b> <span class="badge">Saved</span></div></div></div>`
-    : `<div class="grid" style="margin-top:10px;align-items:end">
-    <div><label>📂 Work Sub Category</label><select id="completedSub_${esc(t.id)}" data-task-id="${esc(t.id)}">${completedSubCategoryOptions('')}</select></div>
-    <div><label>&nbsp;</label><button class="primary smallbtn" type="button" onclick="saveCompletedSubCategory('${esc(t.id)}',this)">💾 Save Sub Category</button></div>
-  </div>`;
+  const subLabel=savedSub ? reportSub({work_sub_category:savedSub}) : '-';
   return `<div class="task"><h3>${esc(t.project)} ${revisionBadge(t.revision_no??0)} ${badge('Completed')}</h3>
   <div class="meta"><b>${esc(t.unit)}</b> • Completed: ${esc(t.completed_at?reportDate(t.completed_at):reportDate(t.start_date))}<br>
-  Category: ${esc(t.category||'-')} • Revision: ${esc(t.revision_type||'Original Work')}<br>
+  Given By: ${esc(t.assigned_by||t.given_by||'-')} • Priority: ${esc(t.priority||'-')}<br>
+  Category: ${esc(t.category||'-')} • Sub Category: <b>${esc(subLabel)}</b> • Revision: ${esc(t.revision_type||'Original Work')}<br>
   Plan: ${esc(t.plan_activity||'-')}<br>Actual: ${esc(t.actual_activity||'-')}<br>
   ${t.start_time||''}${t.end_time?' → '+t.end_time:''}${t.location?' • '+esc(t.location):''}<br>
   Remarks: ${esc(t.remarks||'-')}
   ${t.revision_reason?'<br>Revision Reason: '+esc(t.revision_reason):''}</div>
-  ${subUI}
-  <div class="actions"><button class="secondary smallbtn" onclick="reworkCompletedTask('${esc(t.id)}')">🔄 Rework</button><button class="secondary smallbtn" onclick="editTask('${esc(t.id)}')">✏️ View / Edit</button></div></div>`;
+  <div class="actions"><button class="secondary smallbtn" onclick="reworkCompletedTask('${esc(t.id)}')">🔄 Rework</button><button class="secondary smallbtn" onclick="viewEditCompletedTask('${esc(t.id)}')">✏️ View / Edit</button></div><div id="givenby-edit-${esc(t.id)}"></div></div>`;
 }
-async function saveCompletedSubCategory(id,btn){
-  const sel=$('completedSub_'+id); const value=sel?.value||'';
-  if(!value){alert('Please select a Work Sub Category.');return}
-  if(btn){btn.disabled=true;btn.textContent='⏳ Saving...'}
-  // Always keep a local copy so reporting continues to work even when the
-  // existing Supabase tasks table does not yet have work_sub_category.
-  setSubcatLocal(id,value);
-  const r=await sb.from('tasks').update({work_sub_category:value,updated_at:new Date().toISOString()}).eq('id',id);
-  const t=tasks.find(x=>x.id===id); if(t)t.work_sub_category=value;
-  if(r.error){
-    if(btn){btn.disabled=false;btn.textContent='⚠️ Saved Locally'}
-    setTimeout(()=>{if(btn)btn.textContent='💾 Save Sub Category'},1800);
-    return;
+async function viewEditCompletedTask(id){
+  const t=tasks.find(x=>x.id===id);
+  if(!t)return;
+  showTab('task',document.querySelectorAll('nav button')[3]);
+  $('editingId').value=t.id;
+  populateRelatedWork();
+  const sel=$('activityWorkSelect');
+  if(sel){
+    if(!Array.from(sel.options).some(o=>o.value===t.id)){
+      sel.insertAdjacentHTML('beforeend',`<option value="${esc(t.id)}">${esc(t.project)} — ${esc(t.unit)} — Rev.${t.revision_no??0} (Completed)</option>`);
+    }
+    sel.value=t.id;
   }
-  if(btn){btn.disabled=false;btn.textContent=r.error?'⚠️ Saved Locally':'✅ Saved'}
-  renderCompletedTasks();
-}
-async function saveAllCompletedSubCategories(){
-  const selects=[...document.querySelectorAll('#completedTaskList select[data-task-id]')];
-  if(!selects.length){alert('All completed works already have a saved Sub Category.');return}
-  const missing=selects.filter(s=>!s.value);
-  if(missing.length){alert('Please select Sub Category for all unsaved completed works in the current list before saving.');return}
-  let saved=0,dbErrors=0;
-  for(const s of selects){
-    const id=s.dataset.taskId,value=s.value;
-    setSubcatLocal(id,value);
-    const t=tasks.find(x=>x.id===id);if(t)t.work_sub_category=value;
-    const r=await sb.from('tasks').update({work_sub_category:value,updated_at:new Date().toISOString()}).eq('id',id);
-    saved++; if(r.error)dbErrors++;
-  }
-  renderCompletedTasks();
-  if(dbErrors){alert(`${saved} completed works saved for this browser. ${dbErrors} database updates could not be saved because the existing database may not have the Sub Category column. Report will still use the saved Sub Categories on this device.`)}
-  else alert(`${saved} completed work${saved===1?'':'s'} Sub Category saved successfully. The Sub Category option is now hidden for these works.`);
-}
 
+  // Show Category + Sub Category controls only for Completed Work View/Edit.
+  $('completedEditMeta').classList.remove('hidden');
+  $('unit').value=t.unit||'';
+  $('project').value=t.project||'';
+  $('category').value=t.category||'';
+  $('revisionNo').value=t.revision_no??0;
+  $('revisionType').value=t.revision_type||'Original Work';
+  populateCompletedCategoryOptions(t.category||'Other');
+  const currentSub=getEffectiveSubcat(t);
+  $('editCompletedSubCategory').value=currentSub||'';
+
+  // The Daily Activity form does not need the old hidden category/unit/project inputs.
+  // It is enough to load the editable activity fields that actually exist in this form.
+  $('date').value=today;
+  $('planned').value=t.plan_activity||'';
+  $('actual').value=t.actual_activity||'';
+  $('start').value='';$('end').value='';
+  $('status').value=t.status||'Completed';
+  $('travel').value=t.travel?'Yes':'No';$('location').value=t.location||'';$('next').value=t.next_action||'';
+  $('revisionNo').value=t.revision_no??0;$('revisionType').value=t.revision_type||'Original Work';
+  $('revisionReason').value=t.revision_reason||'';$('remarks').value=t.remarks||'';
+  $('saveBtn').textContent='Update Completed Work';$('formTitle').textContent='View / Edit Completed Work';
+  $('cancelEdit').classList.remove('hidden');
+  seedLegacyTaskTime(t);
+  await loadWorkTimeHistory(id);
+  await loadRevisionTimeline(id);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
 async function reworkCompletedTask(id){
   const t=tasks.find(x=>x.id===id);if(!t||t.status!=='Completed')return;
   const nextRev=Number(t.revision_no||0)+1;
   if(!confirm(`Add "${t.project}" back to My Work as Revision ${nextRev}?`))return;
-  const now=new Date().toISOString();
-  const data={
-    start_date:today,unit:t.unit,project:t.project,category:t.category,plan_activity:'Rework / Revision',actual_activity:'',
-    start_time:null,end_time:null,status:'In Progress',travel:t.travel||false,location:t.location||'',next_action:'',remarks:'Rework started from completed task.',
-    updated_at:now,created_by:user.id,received_date:today,assigned_by:t.assigned_by||'',due_date:t.due_date||null,priority:t.priority||'Medium',
-    workflow_status:'Working',work_details:`Rework for ${t.project} — Rev.${t.revision_no??0}`,picked_at:now,completed_at:null,
-    revision_no:nextRev,revision_type:'Rework',revision_reason:`Rework requested for completed Rev.${t.revision_no??0}`,parent_task_id:t.id
-  };
-  const r=await sb.from('tasks').insert(data);
-  if(r.error){alert(r.error.message);return}
-  await loadTasks();renderMyWork();renderCompletedTasks();renderDashboard();renderInbox();renderTasks();
-}
-function renderCompletedTasks(){
-  const from=$('cFrom')?.value||'0000-01-01',to=$('cTo')?.value||'9999-12-31',u=$('cFilterUnit')?.value||'All';
-  const a=tasks.filter(t=>t.status==='Completed' && t.start_date>=from && t.start_date<=to && (u==='All'||t.unit===u))
-    .sort((x,y)=>{
-      const dx=String(x.completed_at||x.completed_date||x.start_date||'9999-12-31');
-      const dy=String(y.completed_at||y.completed_date||y.start_date||'9999-12-31');
-      if(dx!==dy) return dx.localeCompare(dy);
-      const rx=Number(x.revision_no||0), ry=Number(y.revision_no||0);
-      return rx-ry;
-    });
-  $('completedTaskList').innerHTML=a.length?a.map(completedTaskHTML).join(''):'<p>No completed tasks found.</p>';
-}
-
-function renderTasks(){const d=$('filterDate').value,u=$('filterUnit').value,q=($('allTaskSearch')?.value||'').trim();const a=tasks.filter(t=>(!d||t.start_date===d)&&(u==='All'||t.unit===u)&&taskSearchMatch(t,q));$('allTasks').innerHTML=a.length?a.map(taskHTML).join(''):'<p>No matching tasks.</p>'}
-
-function reportSub(t){
-  const raw=String(getEffectiveSubcat(t)).trim();
-  const v=raw.toLowerCase().replace(/^\d+\.\s*/, '').replace(/\s+/g,' ');
-  if(v==='other department work' || v==='other department') return 'Other Department';
-  if(v==='drawing' || v==='drawings') return 'Drawing';
-  if(v==='5s work' || v==='5s') return '5S Work';
-  if(v==='training') return 'Training';
-  return raw;
+  const now=new Date().toISOString(); const subCategory=getEffectiveSubcat(t);
+  const data={start_date:today,unit:t.unit,project:t.project,category:t.category,plan_activity:'Rework / Revision',actual_activity:'',start_time:null,end_time:null,status:'In Progress',travel:t.travel||false,location:t.location||'',next_action:'',remarks:'Rework started from completed task.',updated_at:now,created_by:user.id,received_date:today,assigned_by:t.assigned_by||'',due_date:t.due_date||null,priority:t.priority||'Medium',workflow_status:'Working',work_details:`Rework for ${t.project} — Rev.${t.revision_no??0}`,picked_at:now,completed_at:null,revision_no:nextRev,revision_type:'Rework',revision_reason:`Rework requested for completed Rev.${t.revision_no??0}`,parent_task_id:t.id};
+  let r=await sb.from('tasks').insert({...data,work_sub_category:subCategory||null});
+  if(r.error && /work_sub_category|schema cache|column/i.test(r.error.message||'')) r=await sb.from('tasks').insert(data);
+  if(r.error){alert(r.error.message);return} const nt=Array.isArray(r.data)?r.data[0]:r.data;
+  if(nt?.id&&subCategory)setSubcatLocal(nt.id,subCategory); await loadTasks();renderMyWork();renderCompletedTasks();renderDashboard();renderInbox();renderTasks();
 }
 function reportReference(t){ return String(t.assigned_by||t.given_by||'').trim() || '-'; }
 function reportDate(v){
@@ -1236,6 +1340,31 @@ function reportDate(v){
   const d=new Date(raw);
   if(!Number.isNaN(d.getTime())) return String(d.getDate()).padStart(2,'0')+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+d.getFullYear();
   return raw;
+}
+
+function reportSub(t){
+  const raw=String(getEffectiveSubcat(t)).trim();
+  const v=raw.toLowerCase().replace(/^\d+\.\s*/, '').replace(/\s+/g,' ');
+  if(v==='other department work' || v==='other department') return 'Other Department';
+  if(v==='drawing' || v==='drawings') return 'Drawing';
+  if(v==='5s work' || v==='5s') return '5S Work';
+  if(v==='training') return 'Training';
+  return raw;
+}
+
+function renderCompletedTasks(){
+  const from=$('cFrom')?.value||'0000-01-01',to=$('cTo')?.value||'9999-12-31',u=$('cFilterUnit')?.value||'All';
+  const a=tasks.filter(t=>{
+    const st=String(t.status||'').trim().toLowerCase();
+    const d=String(t.completed_at?t.completed_at.slice(0,10):(t.completed_date||t.start_date||'')).slice(0,10);
+    return st==='completed' && d>=from && d<=to && (u==='All'||String(t.unit||'')===u);
+  }).sort((x,y)=>{
+    const dx=new Date(x.completed_at||x.completed_date||x.updated_at||x.start_date||0).getTime();
+    const dy=new Date(y.completed_at||y.completed_date||y.updated_at||y.start_date||0).getTime();
+    if(dy!==dx)return dy-dx;
+    return Number(y.revision_no||0)-Number(x.revision_no||0);
+  });
+  const box=$('completedTaskList'); if(box)box.innerHTML=a.length?a.map(completedTaskHTML).join(''):'<p>No completed tasks found.</p>';
 }
 
 function reportData(){
@@ -1330,14 +1459,15 @@ function exportCompletedWorkExcel(){
     {key:'Other Department',name:'3. Other Department Work',headers:['Sl.No','Unit','Work Name','Date','Ref','Remarks'],data:t=>[t.unit||'',t.project||'',reportDate(t.completed_at?t.completed_at.slice(0,10):(t.start_date||'')),reportReference(t),reportRemarks(t)]},
     {key:'Training',name:'4. Training',headers:['Sl.No','Unit','Work Name','Date','Application','Remarks'],data:t=>[t.unit||'',t.project||'',reportDate(t.completed_at?t.completed_at.slice(0,10):(t.start_date||'')),t.application||t.work_details||t.actual_activity||'',reportRemarks(t)]}
   ];
+  const selectedSub=$('reportSubCategory')?.value||'All';
   defs.forEach(d=>{
     let sourceRows=a.filter(t=>reportSub(t)===d.key);
     if(d.key==='Drawing'){
       sourceRows=[...sourceRows].sort((x,y)=>{
         const c=String(x.start_date||'').localeCompare(String(y.start_date||''));
-        if(c!==0) return c;
-        const rx=Number(x.revision_no||0), ry=Number(y.revision_no||0);
-        if(rx!==ry) return rx-ry;
+        if(c!==0)return c;
+        const rx=Number(x.revision_no||0),ry=Number(y.revision_no||0);
+        if(rx!==ry)return rx-ry;
         return String(x.project||'').localeCompare(String(y.project||''));
       });
     }
@@ -1346,9 +1476,35 @@ function exportCompletedWorkExcel(){
     ws['!cols']=d.headers.map((x,i)=>({wch:i===2?34:(x==='Remarks'?42:18)}));
     XLSX.utils.book_append_sheet(wb,ws,d.name.slice(0,31));
   });
+
+  // IMPORTANT: when Sub Category is All, also export completed works whose
+  // Sub Category is blank/unrecognized. Previously these works were filtered
+  // out of Excel even though they could appear in the on-screen report.
+  if(selectedSub==='All'){
+    const known=['Drawing','5S Work','Other Department','Training'];
+    let otherRows=a.filter(t=>!known.includes(reportSub(t)));
+    otherRows.sort((x,y)=>{
+      const dx=String(x.completed_at?x.completed_at.slice(0,10):(x.start_date||''));
+      const dy=String(y.completed_at?y.completed_at.slice(0,10):(y.start_date||''));
+      const c=dx.localeCompare(dy); if(c!==0)return c;
+      const rx=Number(x.revision_no||0),ry=Number(y.revision_no||0);
+      if(rx!==ry)return rx-ry;
+      return String(x.project||'').localeCompare(String(y.project||''));
+    });
+    const headers=['Sl.No','Unit','Work Name','Work Category','Sub Category','Date','Details','Ref','Remarks'];
+    const rows=otherRows.map((t,i)=>[
+      i+1,t.unit||'',t.project||'',t.category||'',reportSub(t)||'Not Assigned',
+      reportDate(t.completed_at?t.completed_at.slice(0,10):(t.start_date||'')),
+      t.application||t.work_details||t.actual_activity||'',reportReference(t),reportRemarks(t)
+    ]);
+    const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
+    ws['!cols']=headers.map((x,i)=>({wch:i===2?34:(x==='Remarks'||x==='Details'?42:18)}));
+    XLSX.utils.book_append_sheet(wb,ws,'5. Other Work');
+  }
+
   const date=localISODate();
   XLSX.writeFile(wb,`Completed_Work_Report_${date}.xlsx`);
-  msg('reportMsg','Excel report created using the supplied four-sub-category format.','ok');
+  msg('reportMsg','Excel report created. All filtered completed works are included, including uncategorized works.','ok');
 }
 function printReport(){const box=$('reportBox');if(!box||!box.innerText.trim()){msg('reportMsg','Generate the report first.','error');return}const w=window.open('','_blank','width=1100,height=800');if(!w){msg('reportMsg','Please allow pop-ups to print the report.','error');return}w.document.write(`<html><head><title>Completed Work Report</title><style>body{font-family:Arial;padding:24px}.report-table{width:100%;border-collapse:collapse;margin-bottom:18px}.report-table th,.report-table td{border:1px solid #ddd;padding:7px}.report-table th{background:#f5f5f5}</style></head><body><h1>📊 Completed Work Report</h1>${box.innerHTML}</body></html>`);w.document.close();w.focus();setTimeout(()=>w.print(),300)}
 
@@ -1671,18 +1827,43 @@ function getWorkSubCategory(){
 <script id="phase4-script">
 (function(){
 const UNIT_VISIT_KEY='assistant_manager_unit_visits_v1';
+let unitVisitsCloudReady=false;
 function getUnitVisits(){try{const a=JSON.parse(localStorage.getItem(UNIT_VISIT_KEY)||'[]');return Array.isArray(a)?a:[]}catch(_){return []}}
 function setUnitVisits(a){localStorage.setItem(UNIT_VISIT_KEY,JSON.stringify(a||[]))}
+async function loadUnitVisitsCloud(){
+  if(!user||!sb)return getUnitVisits();
+  try{
+    const r=await sb.from('unit_visits').select('*').eq('created_by',user.id).order('departure_date',{ascending:false}).order('departure_time',{ascending:false});
+    if(r.error) { unitVisitsCloudReady=false; return getUnitVisits(); }
+    unitVisitsCloudReady=true;
+    const rows=Array.isArray(r.data)?r.data:[];
+    setUnitVisits(rows);
+    return rows;
+  }catch(_){unitVisitsCloudReady=false;return getUnitVisits();}
+}
+async function saveUnitVisitCloud(row){
+  if(!user||!sb)return false;
+  try{
+    const payload={...row,created_by:user.id};
+    const r=await sb.from('unit_visits').upsert(payload,{onConflict:'id'});
+    if(r.error){unitVisitsCloudReady=false;return false;}
+    unitVisitsCloudReady=true;return true;
+  }catch(_){unitVisitsCloudReady=false;return false;}
+}
+async function deleteUnitVisitCloud(id){
+  if(!user||!sb)return false;
+  try{const r=await sb.from('unit_visits').delete().eq('id',id).eq('created_by',user.id);return !r.error;}catch(_){return false;}
+}
 function uvDate(v){return reportDate(v)}
 function uvDuration(a,b){if(!a||!b)return '-';const start=new Date((a.date||'')+'T'+(a.time||'00:00'));const end=new Date((b.date||'')+'T'+(b.time||'00:00'));if(Number.isNaN(start.getTime())||Number.isNaN(end.getTime()))return '-';const m=Math.round((end-start)/60000);if(m<0)return '-';return formatMinutes(m)}
 function initUnitVisitForm(){if(!$('uvDepartureDate'))return;if(!$('uvDepartureDate').value)$('uvDepartureDate').value=today;if(!$('uvHomeUnit').value)$('uvHomeUnit').value='Tirunelveli Unit'}
 function clearUnitVisitForm(){const f=$('unitVisitForm');if(!f)return;f.reset();$('uvEditingId').value='';$('uvHomeUnit').value='Tirunelveli Unit';$('uvDepartureDate').value=today;$('uvSaveBtn').textContent='💾 Save Unit Visit';$('uvCancelBtn').classList.add('hidden');$('unitVisitMsg').innerHTML=''}
 function cancelUnitVisitEdit(){clearUnitVisitForm()}
 function editUnitVisit(id){const v=getUnitVisits().find(x=>x.id===id);if(!v)return;showTab('unitVisit',document.querySelector('nav button[onclick*="unitVisit"]'));$('uvEditingId').value=v.id;$('uvHomeUnit').value=v.home_unit||'Tirunelveli Unit';$('uvVisitUnit').value=v.visit_unit||'Madurai Unit';$('uvPurpose').value=v.purpose||'';$('uvDepartureDate').value=v.departure_date||today;$('uvDepartureTime').value=v.departure_time||'';$('uvReturnDate').value=v.return_date||'';$('uvReturnTime').value=v.return_time||'';$('uvRemarks').value=v.remarks||'';$('uvSaveBtn').textContent='💾 Update Unit Visit';$('uvCancelBtn').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
-function deleteUnitVisit(id){if(!confirm('Delete this Unit Visit record?'))return;setUnitVisits(getUnitVisits().filter(x=>x.id!==id));renderUnitVisits()}
+async function deleteUnitVisit(id){if(!confirm('Delete this Unit Visit record?'))return;setUnitVisits(getUnitVisits().filter(x=>x.id!==id));await deleteUnitVisitCloud(id);await loadUnitVisitsCloud();renderUnitVisits()}
 function renderUnitVisits(){const box=$('unitVisitList');if(!box)return;const q=($('unitVisitSearch')?.value||'').trim().toLowerCase();let a=getUnitVisits().filter(v=>!q||[v.home_unit,v.visit_unit,v.purpose,v.remarks,v.departure_date,v.return_date].filter(Boolean).join(' ').toLowerCase().includes(q));a.sort((x,y)=>String(y.departure_date||'').localeCompare(String(x.departure_date||''))||String(y.departure_time||'').localeCompare(String(x.departure_time||'')));box.innerHTML=a.length?a.map(v=>{const returned=!!(v.return_date&&v.return_time);const dur=returned?uvDuration({date:v.departure_date,time:v.departure_time},{date:v.return_date,time:v.return_time}):'-';return `<div class="task"><h3>🚗 ${esc(v.visit_unit||'-')} <span class="badge ${returned?'done':'progress'}">${returned?'Returned':'On Visit'}</span></h3><div class="meta"><b>From:</b> ${esc(v.home_unit||'Tirunelveli Unit')} • <b>Purpose:</b> ${esc(v.purpose||'-')}<br><b>Departure:</b> ${esc(uvDate(v.departure_date))} ${esc(v.departure_time||'')}<br><b>Return:</b> ${returned?esc(uvDate(v.return_date))+' '+esc(v.return_time):'Not returned'} • <b>Duration:</b> ${esc(dur)}${v.remarks?'<br>Remarks: '+esc(v.remarks):''}</div><div class="actions"><button class="secondary smallbtn" onclick="editUnitVisit('${esc(v.id)}')">✏️ Edit</button>${!returned?`<button class="primary smallbtn" onclick="markUnitVisitReturned('${esc(v.id)}')">🏠 Mark Returned</button>`:''}<button class="secondary smallbtn" onclick="deleteUnitVisit('${esc(v.id)}')">🗑️ Delete</button></div></div>`}).join(''):'<p>No Unit Visit records.</p>'}
-function markUnitVisitReturned(id){const a=getUnitVisits();const v=a.find(x=>x.id===id);if(!v)return;const now=new Date();v.return_date=localISODate(now);v.return_time=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');v.updated_at=now.toISOString();setUnitVisits(a);renderUnitVisits()}
-$('unitVisitForm').onsubmit=e=>{e.preventDefault();const a=getUnitVisits();const id=$('uvEditingId').value||('uv_'+Date.now()+'_'+Math.random().toString(36).slice(2,8));const row={id,home_unit:'Tirunelveli Unit',visit_unit:$('uvVisitUnit').value,purpose:$('uvPurpose').value.trim(),departure_date:$('uvDepartureDate').value,departure_time:$('uvDepartureTime').value,return_date:$('uvReturnDate').value||'',return_time:$('uvReturnTime').value||'',remarks:$('uvRemarks').value.trim(),updated_at:new Date().toISOString()};const i=a.findIndex(x=>x.id===id);if(i>=0)a[i]=row;else{row.created_at=new Date().toISOString();a.push(row)}setUnitVisits(a);renderUnitVisits();clearUnitVisitForm();$('unitVisitMsg').innerHTML='<div class="success">Unit Visit saved successfully.</div>'};
+async function markUnitVisitReturned(id){const a=getUnitVisits();const v=a.find(x=>x.id===id);if(!v)return;const now=new Date();v.return_date=localISODate(now);v.return_time=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');v.updated_at=now.toISOString();setUnitVisits(a);await saveUnitVisitCloud(v);await loadUnitVisitsCloud();renderUnitVisits()}
+$('unitVisitForm').onsubmit=async e=>{e.preventDefault();const a=getUnitVisits();const id=$('uvEditingId').value||('uv_'+Date.now()+'_'+Math.random().toString(36).slice(2,8));const row={id,home_unit:'Tirunelveli Unit',visit_unit:$('uvVisitUnit').value,purpose:$('uvPurpose').value.trim(),departure_date:$('uvDepartureDate').value,departure_time:$('uvDepartureTime').value,return_date:$('uvReturnDate').value||'',return_time:$('uvReturnTime').value||'',remarks:$('uvRemarks').value.trim(),updated_at:new Date().toISOString(),created_by:user?.id||null};const i=a.findIndex(x=>x.id===id);if(i>=0)a[i]=row;else{row.created_at=new Date().toISOString();a.push(row)}setUnitVisits(a);const cloud=await saveUnitVisitCloud(row);await loadUnitVisitsCloud();renderUnitVisits();clearUnitVisitForm();$('unitVisitMsg').innerHTML=cloud?'<div class="msg ok">Unit Visit saved and synced to PWA.</div>':'<div class="msg ok">Unit Visit saved locally. Supabase sync is unavailable until the unit_visits table is created.</div>'};
   // Expose Unit Visit handlers because the cards use inline onclick handlers and the main app calls these functions.
   window.initUnitVisitForm=initUnitVisitForm;
   window.clearUnitVisitForm=clearUnitVisitForm;
@@ -1691,6 +1872,7 @@ $('unitVisitForm').onsubmit=e=>{e.preventDefault();const a=getUnitVisits();const
   window.deleteUnitVisit=deleteUnitVisit;
   window.renderUnitVisits=renderUnitVisits;
   window.markUnitVisitReturned=markUnitVisitReturned;
+  window.loadUnitVisitsCloud=loadUnitVisitsCloud;
 
   const P4_PERM_KEY='task_permissions_v2_'+(()=>{try{return (user&&user.id)||'guest'}catch(_){return 'guest'}})();
   const P4_CAT_KEY='task_custom_categories_v2';
@@ -1704,7 +1886,7 @@ $('unitVisitForm').onsubmit=e=>{e.preventDefault();const a=getUnitVisits();const
   }
   function p4PopulateCategories(){
     const custom=p4Categories();
-    ['category','wCategory'].forEach(id=>{
+    ['category','wCategory','editCompletedCategory'].forEach(id=>{
       const el=document.getElementById(id);if(!el)return;
       const old=el.value;
       custom.forEach(x=>{if(![...el.options].some(o=>o.value===x))el.add(new Option(x,x));});
@@ -1793,7 +1975,7 @@ $('unitVisitForm').onsubmit=e=>{e.preventDefault();const a=getUnitVisits();const
     return oldShowTab(id,btn);
   };
   const guard=(name,key)=>{const old=window[name];if(typeof old!=='function')return;window[name]=function(...args){if(!phase4Can(key)){alert('You do not have permission for this action.');return;}return old.apply(this,args);};};
-  guard('pickWork','Inbox');guard('editInboxWork','Inbox');guard('deleteMyWork','MyWork');guard('openTaskFromWork','MyWork');guard('startPicked','MyWork');guard('sendBackToInbox','MyWork');guard('reworkCompletedTask','Complete');guard('editTask','MyWork');guard('generateReport','Reports');guard('printReport','Reports');
+  guard('pickWork','Inbox');guard('editInboxWork','Inbox');guard('deleteMyWork','MyWork');guard('openTaskFromWork','MyWork');guard('startPicked','MyWork');guard('sendBackToInbox','MyWork');guard('reworkCompletedTask','Complete');guard('viewEditCompletedTask','Complete');guard('editTask','MyWork');guard('generateReport','Reports');guard('printReport','Reports');
 
   const oldOpenDashboard=window.openDashboard;
   window.openDashboard=function(){const r=oldOpenDashboard.apply(this,arguments);setTimeout(()=>{p4LoadPermissionUI();phase4RenderCategories();phase4RefreshAnalytics();},300);return r;};
@@ -1807,5 +1989,69 @@ $('unitVisitForm').onsubmit=e=>{e.preventDefault();const a=getUnitVisits();const
 })();
 </script>
 
+<script id="plus-features-js">
+const PLUS_FOLLOW_KEY='assistant_manager_plus_followups_v1';
+const PLUS_NOTE_KEY='assistant_manager_plus_notes_v1';
+const PLUS_ATTACH_KEY='assistant_manager_plus_attachments_v1';
+function plusEsc(v){return typeof esc==='function'?esc(v):String(v??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
+function plusArr(key){try{return JSON.parse(localStorage.getItem(key)||'[]')}catch(_){return[]}}
+function plusSet(key,a){localStorage.setItem(key,JSON.stringify(a))}
+function plusDate(t){return String(t?.completed_at||t?.completed_date||t?.start_date||'').slice(0,10)}
+function plusUnits(){return [...new Set(tasks.map(t=>String(t.unit||'').trim()).filter(Boolean))].sort()}
+function plusWorkOptions(){return tasks.slice().sort((a,b)=>String(a.project||'').localeCompare(String(b.project||''))).map(t=>`<option value="${plusEsc(t.id)}">${plusEsc(t.project||'-')} • ${plusEsc(t.unit||'-')} • ${plusEsc(t.status||'-')}</option>`).join('')}
+const PLUS_PERSON_KEY='assistant_manager_person_master_v1';
+function plusPersonMaster(){
+  let a=plusArr(PLUS_PERSON_KEY);
+  const seen=new Set(a.map(x=>String(x.name||'').trim().toLowerCase()).filter(Boolean));
+  (Array.isArray(tasks)?tasks:[]).forEach(t=>{const n=String(t.assigned_by||t.given_by||'').trim();if(n&&!seen.has(n.toLowerCase())){a.push({id:'p_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),name:n,designation:''});seen.add(n.toLowerCase())}});
+  a=a.filter(x=>String(x.name||'').trim());
+  plusSet(PLUS_PERSON_KEY,a); return a;
+}
+function plusRenderPersonMaster(){
+  const sel=$('plusPersonSelect'); if(!sel)return;
+  const a=plusPersonMaster().sort((x,y)=>String(x.name).localeCompare(String(y.name)));
+  const old=sel.value; sel.innerHTML='<option value="">-- Select Person --</option>'+a.map(x=>`<option value="${plusEsc(x.id)}">${plusEsc(x.name)}${x.designation?' — '+plusEsc(x.designation):''}</option>`).join(''); if(old&&a.some(x=>x.id===old))sel.value=old;
+  personRefreshAssignmentDropdown();
+}
+function personRefreshAssignmentDropdown(){
+  const sel=$('wGivenBy'); if(!sel)return; const old=sel.value; const a=plusPersonMaster().sort((x,y)=>String(x.name).localeCompare(String(y.name)));
+  sel.innerHTML='<option value="">-- Select Person --</option>'+a.map(x=>`<option value="${plusEsc(x.name)}">${plusEsc(x.name)}${x.designation?' — '+plusEsc(x.designation):''}</option>`).join(''); if(old&&a.some(x=>x.name===old))sel.value=old;
+}
+function personSyncAssignment(){return;}
+function plusLoadPerson(){const id=$('plusPersonSelect')?.value,a=plusPersonMaster(),x=a.find(p=>p.id===id);if(!x)return;$('plusPersonName').value=x.name||'';$('plusPersonDesignation').value=x.designation||'';}
+function plusClearPerson(){$('plusPersonSelect').value='';$('plusPersonName').value='';$('plusPersonDesignation').value='';$('plusPersonMsg').innerHTML='';}
+function plusAddPerson(){const name=$('plusPersonName')?.value.trim(),designation=$('plusPersonDesignation')?.value.trim();if(!name){alert('Enter Person Name.');return}let a=plusPersonMaster();if(a.some(x=>String(x.name).trim().toLowerCase()===name.toLowerCase())){alert('This Person Name already exists. Use Modify.');return}a.push({id:'p_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),name,designation});plusSet(PLUS_PERSON_KEY,a);plusRenderPersonMaster();plusRenderGivenBy();$('plusPersonMsg').innerHTML='<div class="msg ok">Person added.</div>';plusClearPerson();}
+function plusEditPerson(){const id=$('plusPersonSelect')?.value,name=$('plusPersonName')?.value.trim(),designation=$('plusPersonDesignation')?.value.trim();if(!id){alert('Select a Person.');return}if(!name){alert('Enter Person Name.');return}let a=plusPersonMaster(),idx=a.findIndex(x=>x.id===id);if(idx<0){alert('Person not found.');return}if(a.some((x,i)=>i!==idx&&String(x.name).trim().toLowerCase()===name.toLowerCase())){alert('Another person already has this name.');return}const oldName=a[idx].name;a[idx]={...a[idx],name,designation};plusSet(PLUS_PERSON_KEY,a);let changed=0;
+  const affected=Array.isArray(tasks)?tasks.filter(t=>String(t.assigned_by||t.given_by||'').trim()===String(oldName).trim()):[];
+  (async()=>{for(const t of affected){let payload={assigned_by:name};if('given_by' in t)payload.given_by=name; if(sb){const r=await sb.from('tasks').update(payload).eq('id',t.id);if(!r.error)changed++}} if(affected.length){affected.forEach(t=>{t.assigned_by=name;if('given_by' in t)t.given_by=name});} plusRenderPersonMaster();plusRenderGivenBy();if(typeof renderInbox==='function')renderInbox();if(typeof renderMyWork==='function')renderMyWork();if(typeof renderCompletedTasks==='function')renderCompletedTasks();if(typeof renderDashboard==='function')renderDashboard();$('plusPersonMsg').innerHTML=`<div class="msg ok">Person updated. ${affected.length?affected.length+' work record(s) updated.':''}</div>`;plusClearPerson();})();
+}
+function plusDeletePerson(){const id=$('plusPersonSelect')?.value;if(!id){alert('Select a Person.');return}const a=plusPersonMaster(),x=a.find(p=>p.id===id);if(!x)return;if(!confirm(`Delete ${x.name}? Existing work records will not be deleted.`))return;plusSet(PLUS_PERSON_KEY,a.filter(p=>p.id!==id));plusRenderPersonMaster();plusRenderGivenBy();plusClearPerson();$('plusPersonMsg').innerHTML='<div class="msg ok">Person deleted from Person Master. Existing work records are preserved.</div>';}
+function plusEnsurePersonName(name){name=String(name||'').trim();if(!name)return;let a=plusPersonMaster();if(!a.some(x=>String(x.name).trim().toLowerCase()===name.toLowerCase())){a.push({id:'p_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),name,designation:''});plusSet(PLUS_PERSON_KEY,a);}plusRenderPersonMaster();}
+function plusInit(){
+ const m=$('plusPlanMonth');if(m&&!m.value)m.value=today.slice(0,7);
+ const us=$('plusPlanUnit');if(us&&us.options.length===1)plusUnits().forEach(u=>us.insertAdjacentHTML('beforeend',`<option>${plusEsc(u)}</option>`));
+ const y=$('plusSummaryYear');if(y&&!y.options.length){const years=[...new Set(tasks.map(t=>plusDate(t).slice(0,4)).filter(Boolean))];if(!years.includes(today.slice(0,4)))years.push(today.slice(0,4));years.sort().reverse().forEach(v=>y.insertAdjacentHTML('beforeend',`<option>${v}</option>`));y.value=today.slice(0,4)}
+ ['plusFollowWork','plusAttachWork','plusNoteWork','plusIndividualWork'].forEach(id=>{const e=$(id);if(e){const old=e.value;e.innerHTML='<option value="">-- Select Work --</option>'+plusWorkOptions();if(old)e.value=old}});
+ if($('plusFollowDate')&&!$('plusFollowDate').value)$('plusFollowDate').value=today;if($('plusNoteDate')&&!$('plusNoteDate').value)$('plusNoteDate').value=today;
+ plusRenderPersonMaster();plusRenderGivenBy();plusRenderUnitWise();
+}
+function plusRenderPlanner(){const box=$('plusPlanner');if(!box)return;const ym=$('plusPlanMonth')?.value||today.slice(0,7),u=$('plusPlanUnit')?.value||'All';const a=tasks.filter(t=>String(t.start_date||'').slice(0,7)===ym&&(u==='All'||t.unit===u)).sort((x,y)=>String(x.start_date||'').localeCompare(String(y.start_date||'')));box.innerHTML=a.length?`<table class="plus-table"><thead><tr><th>Date</th><th>Work</th><th>Unit</th><th>Status</th><th>Due</th></tr></thead><tbody>${a.map(t=>`<tr><td>${plusEsc(reportDate(t.start_date))}</td><td>${plusEsc(t.project||'-')}</td><td>${plusEsc(t.unit||'-')}</td><td>${badge(t.status||'-')}</td><td>${plusEsc(t.due_date?reportDate(t.due_date):'-')}</td></tr>`).join('')}</tbody></table>`:'<p class="plus-muted">No planned work for this month.</p>'}
+function plusRenderDue(){const s=$('plusDueSummary'),box=$('plusDueList');if(!s||!box)return;const active=tasks.filter(t=>t.status!=='Completed');const over=active.filter(t=>t.due_date&&t.due_date<today),due=active.filter(t=>t.due_date===today),up=active.filter(t=>t.due_date&&t.due_date>today);s.innerHTML=`<div class="plus-grid"><div><div class="plus-stat">${over.length}</div><div class="plus-danger">Overdue</div></div><div><div class="plus-stat">${due.length}</div><div>Due Today</div></div><div><div class="plus-stat">${up.length}</div><div>Upcoming</div></div></div>`;const a=[...over,...due,...up].sort((x,y)=>String(x.due_date||'9999').localeCompare(String(y.due_date||'9999')));box.innerHTML=a.length?a.map(t=>`<div class="plus-note"><b>${plusEsc(t.project||'-')}</b> • ${plusEsc(t.unit||'-')}<br>Due: ${plusEsc(reportDate(t.due_date))} ${t.due_date<today?'<span class="plus-danger">OVERDUE</span>':t.due_date===today?'<b>DUE TODAY</b>':''}</div>`).join(''):'<p class="plus-muted">No active due-date items.</p>'}
+function plusRenderPerformance(){const box=$('plusPerformance');if(!box)return;const total=tasks.length,done=tasks.filter(t=>t.status==='Completed').length,pending=tasks.filter(t=>String(t.status||'').toLowerCase()==='pending').length,active=tasks.filter(t=>t.status!=='Completed').length,rework=tasks.filter(t=>Number(t.revision_no||0)>0||String(t.revision_type||'').toLowerCase()==='rework').length,over=tasks.filter(t=>t.status!=='Completed'&&t.due_date&&t.due_date<today).length;box.innerHTML=`<div class="plus-grid"><div><div class="plus-stat">${total}</div>Total Works</div><div><div class="plus-stat">${done}</div>Completed</div><div><div class="plus-stat">${active}</div>Active</div><div><div class="plus-stat">${pending}</div>Pending</div><div><div class="plus-stat">${rework}</div>Revision / Rework</div><div><div class="plus-stat">${over}</div>Overdue</div></div>`}
+function plusRenderSummary(){const box=$('plusSummary');if(!box)return;const y=$('plusSummaryYear')?.value||today.slice(0,4),m=Number($('plusSummaryMonth')?.value||0);const a=tasks.filter(t=>{const d=plusDate(t);return d.slice(0,4)===y&&(!m||Number(d.slice(5,7))===m)});const units={};a.forEach(t=>{units[t.unit||'Unassigned']=(units[t.unit||'Unassigned']||0)+1});box.innerHTML=`<p><b>Period:</b> ${plusEsc(m?$('plusSummaryMonth').selectedOptions[0].text:y)}</p><div class="plus-grid"><div><div class="plus-stat">${a.length}</div>Works</div><div><div class="plus-stat">${a.filter(t=>t.status==='Completed').length}</div>Completed</div><div><div class="plus-stat">${a.filter(t=>t.status!=='Completed').length}</div>Active</div></div><div class="plus-scroll" style="margin-top:8px"><table class="plus-table"><tr><th>Unit</th><th>Works</th></tr>${Object.entries(units).sort((x,y)=>y[1]-x[1]).map(([u,n])=>`<tr><td>${plusEsc(u)}</td><td>${n}</td></tr>`).join('')}</table></div>`}
+function personDesignation(name){const n=String(name||'').trim().toLowerCase();if(!n)return '';const p=plusPersonMaster().find(x=>String(x.name||'').trim().toLowerCase()===n);return p?.designation||'';}
+function plusRenderGivenBy(){const box=$('plusGivenBy');if(!box)return;const groups={};let grandOriginal=0,grandRevision=0,grandTotal=0;tasks.forEach(t=>{const k=String(t.assigned_by||t.given_by||'Unknown').trim()||'Unknown';if(!groups[k])groups[k]={total:0,revision:0,original:0};groups[k].total++;grandTotal++;if(Number(t.revision_no||0)>0||String(t.revision_type||'').toLowerCase()==='rework'){groups[k].revision++;grandRevision++}else{groups[k].original++;grandOriginal++}});const rows=Object.entries(groups).sort((a,b)=>b[1].total-a[1].total).map(([k,v])=>{const d=personDesignation(k);return `<tr><td>${plusEsc(k)}${d?' — '+plusEsc(d):''}</td><td>${v.original}</td><td>${v.revision}</td><td>${v.total}</td></tr>`}).join('');box.innerHTML=`<table class="plus-table"><thead><tr><th>Given By</th><th>No of Work</th><th>Revision Work</th><th>Total Work</th></tr></thead><tbody>${rows||'<tr><td colspan="4">No work data available.</td></tr>'}<tr style="font-weight:700"><td>Grand Total</td><td>${grandOriginal}</td><td>${grandRevision}</td><td>${grandTotal}</td></tr></tbody></table>`}
+function plusRenderUnitWise(){const box=$('plusUnitWise');if(!box)return;const groups={};tasks.forEach(t=>{const k=String(t.unit||'Unassigned').trim()||'Unassigned';if(!groups[k])groups[k]={total:0,revision:0,original:0};groups[k].total++;if(Number(t.revision_no||0)>0||String(t.revision_type||'').toLowerCase()==='rework')groups[k].revision++;else groups[k].original++});const rows=Object.entries(groups).sort((a,b)=>b[1].total-a[1].total).map(([k,v])=>`<tr><td>${plusEsc(k)}</td><td>${v.original}</td><td>${v.revision}</td><td>${v.total}</td></tr>`).join('');box.innerHTML=`<table class="plus-table"><thead><tr><th>Unit</th><th>No of Work</th><th>Revision Work</th><th>Total Work</th></tr></thead><tbody>${rows||'<tr><td colspan="4">No work data available.</td></tr>'}</tbody></table>`}
+function plusRenderSearch(){const box=$('plusSearchList');if(!box)return;const q=($('plusSearch')?.value||'').trim().toLowerCase();const a=tasks.filter(t=>!q||[t.project,t.unit,t.category,t.work_sub_category,getEffectiveSubcat(t),t.assigned_by,t.given_by,t.status,t.priority].filter(Boolean).join(' ').toLowerCase().includes(q)).slice(0,100);box.innerHTML=a.length?a.map(t=>`<div class="plus-note"><b>${plusEsc(t.project||'-')}</b> ${badge(t.status||'-')}<br>${plusEsc(t.unit||'-')} • ${plusEsc(t.category||'-')} • ${plusEsc(reportSub(t)||'-')} • Given By: ${plusEsc(t.assigned_by||t.given_by||'-')}</div>`).join(''):'<p class="plus-muted">No matching works.</p>'}
+function plusRenderFollowups(){const box=$('plusFollowList');if(!box)return;const a=plusArr(PLUS_FOLLOW_KEY).sort((x,y)=>String(y.date||'').localeCompare(String(x.date||'')));box.innerHTML=a.length?a.map(x=>`<div class="plus-note"><b>${plusEsc(x.project)}</b> • ${plusEsc(x.date)} ${plusEsc(x.time||'')}<br>${plusEsc(x.note||'')}<div class="plus-actions"><button class="secondary smallbtn" onclick="plusDeleteFollowup('${plusEsc(x.id)}')">Delete</button></div></div>`).join(''):'<p class="plus-muted">No follow-ups saved.</p>'}
+function plusSaveFollowup(){const id=$('plusFollowWork')?.value;if(!id){alert('Select a Work.');return}const t=tasks.find(x=>x.id===id),a=plusArr(PLUS_FOLLOW_KEY);a.push({id:'f_'+Date.now(),task_id:id,project:t?.project||'-',date:$('plusFollowDate').value,time:$('plusFollowTime').value,note:$('plusFollowNote').value.trim(),created_at:new Date().toISOString()});plusSet(PLUS_FOLLOW_KEY,a);$('plusFollowNote').value='';plusRenderFollowups()}
+function plusDeleteFollowup(id){plusSet(PLUS_FOLLOW_KEY,plusArr(PLUS_FOLLOW_KEY).filter(x=>x.id!==id));plusRenderFollowups()}
+async function plusUploadAttachment(){const id=$('plusAttachWork')?.value,file=$('plusAttachFile')?.files?.[0],msgbox=$('plusAttachMsg');if(!id||!file){msgbox.innerHTML='<div class="msg error">Select Work and File.</div>';return}if(!sb){msgbox.innerHTML='<div class="msg error">Supabase is not connected.</div>';return}const path=`${user?.id||'user'}/${id}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;msgbox.innerHTML='<div class="msg">Uploading...</div>';let r=await sb.storage.from('task-attachments').upload(path,file,{upsert:false});if(r.error){msgbox.innerHTML='<div class="msg error">Upload failed: '+plusEsc(r.error.message)+'<br>Create a Supabase Storage bucket named <b>task-attachments</b> and allow authenticated uploads.</div>';return}const row={id:'a_'+Date.now(),task_id:id,project:tasks.find(t=>t.id===id)?.project||'-',name:file.name,path,created_at:new Date().toISOString()};const a=plusArr(PLUS_ATTACH_KEY);a.push(row);plusSet(PLUS_ATTACH_KEY,a);$('plusAttachFile').value='';msgbox.innerHTML='<div class="msg ok">File uploaded successfully.</div>';plusRenderAttachments()}
+async function plusRenderAttachments(){const box=$('plusAttachList');if(!box)return;const id=$('plusAttachWork')?.value||'';const a=plusArr(PLUS_ATTACH_KEY).filter(x=>!id||x.task_id===id);box.innerHTML=a.length?a.map(x=>`<div class="plus-file"><span>📎 ${plusEsc(x.name)}</span><button class="secondary smallbtn" onclick="plusOpenAttachment('${plusEsc(x.path)}')">Open</button></div>`).join(''):'<p class="plus-muted">No attachments for this work.</p>'}
+async function plusOpenAttachment(path){if(!sb)return;const r=await sb.storage.from('task-attachments').createSignedUrl(path,3600);if(r.error){alert(r.error.message);return}window.open(r.data.signedUrl,'_blank')}
+function plusSaveNote(){const id=$('plusNoteWork')?.value;if(!id){alert('Select a Work.');return}const t=tasks.find(x=>x.id===id),a=plusArr(PLUS_NOTE_KEY);a.push({id:'n_'+Date.now(),task_id:id,project:t?.project||'-',date:$('plusNoteDate').value,note:$('plusNoteText').value.trim(),created_at:new Date().toISOString()});plusSet(PLUS_NOTE_KEY,a);$('plusNoteText').value='';plusRenderNotes()}
+function plusRenderNotes(){const box=$('plusNotes');if(!box)return;const id=$('plusNoteWork')?.value||'';const a=plusArr(PLUS_NOTE_KEY).filter(x=>!id||x.task_id===id).sort((x,y)=>String(y.date||'').localeCompare(String(x.date||'')));box.innerHTML=a.length?a.map(x=>`<div class="plus-note"><b>${plusEsc(reportDate(x.date))}</b><br>${plusEsc(x.note||'')}</div>`).join(''):'<p class="plus-muted">No notes for this work.</p>'}
+function plusIndividualReport(){const id=$('plusIndividualWork')?.value;if(!id){alert('Select a Work.');return}const t=tasks.find(x=>x.id===id);if(!t)return;const notes=plusArr(PLUS_NOTE_KEY).filter(x=>x.task_id===id),f=plusArr(PLUS_FOLLOW_KEY).filter(x=>x.task_id===id),att=plusArr(PLUS_ATTACH_KEY).filter(x=>x.task_id===id);const html=`<!doctype html><html><head><meta charset="utf-8"><title>Individual Work Report</title><style>body{font-family:Arial;padding:25px}h1{font-size:22px}table{border-collapse:collapse;width:100%;margin:12px 0}td,th{border:1px solid #bbb;padding:8px;text-align:left}th{width:28%;background:#f2f2f2}@media print{button{display:none}}</style></head><body><button onclick="print()">Print</button><h1>Individual Work Report</h1><table><tr><th>Project / Work</th><td>${plusEsc(t.project)}</td></tr><tr><th>Unit</th><td>${plusEsc(t.unit)}</td></tr><tr><th>Category</th><td>${plusEsc(t.category)}</td></tr><tr><th>Sub Category</th><td>${plusEsc(reportSub(t)||'-')}</td></tr><tr><th>Given By / Reference</th><td>${plusEsc(t.assigned_by||t.given_by||'-')}</td></tr><tr><th>Status</th><td>${plusEsc(t.status)}</td></tr><tr><th>Priority</th><td>${plusEsc(t.priority||'-')}</td></tr><tr><th>Start Date</th><td>${plusEsc(reportDate(t.start_date))}</td></tr><tr><th>Due Date</th><td>${plusEsc(reportDate(t.due_date))}</td></tr><tr><th>Completed Date</th><td>${plusEsc(reportDate(plusDate(t)))}</td></tr><tr><th>Actual Activity</th><td>${plusEsc(t.actual_activity||'-')}</td></tr><tr><th>Remarks</th><td>${plusEsc(t.remarks||'-')}</td></tr></table><h3>Notes / Follow-up History</h3>${notes.length?notes.map(x=>`<p><b>${plusEsc(reportDate(x.date))}</b> — ${plusEsc(x.note)}</p>`).join(''):'<p>None</p>'}<h3>Reminders / Follow-ups</h3>${f.length?f.map(x=>`<p><b>${plusEsc(x.date)} ${plusEsc(x.time||'')}</b> — ${plusEsc(x.note)}</p>`).join(''):'<p>None</p>'}<h3>Attachments</h3>${att.length?att.map(x=>`<p>📎 ${plusEsc(x.name)}</p>`).join(''):'<p>None</p>'}</body></html>`;const w=window.open('','_blank');if(!w){alert('Allow pop-ups for this site.');return}w.document.write(html);w.document.close()}
+</script>
 </body>
 </html>
