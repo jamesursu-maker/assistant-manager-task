@@ -179,8 +179,17 @@ main{padding-left:318px;}
 .p4-perm-row input{width:20px;height:20px}.p4-category-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:9px;margin-top:8px;background:#fff}
 @media(max-width:900px){.phase4-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.phase4-grid,.p4-perm-grid{grid-template-columns:1fr}.p4-card{padding:13px}}
 </style>
-<style id="assign-work-ui-v1">
+<style id="assign-work-ui-v2">
+#inboxFormWrap{display:none!important;position:fixed;inset:0;z-index:1200;background:rgba(15,42,73,.52);align-items:center;justify-content:center;padding:18px;box-sizing:border-box}
+#inboxFormWrap.assign-modal-open{display:flex!important}
 #assignWorkFormWrap.hidden{display:none!important}
+#assignWorkFormWrap.assign-modal{display:block!important;width:min(900px,96vw);max-height:92vh;overflow:auto;background:#fff;border:1px solid #cbd5e1;border-radius:12px;box-shadow:0 22px 60px rgba(15,23,42,.30)}
+.assign-modal-header{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:#17365d;color:#fff;border-bottom:3px solid #f2c300}
+.assign-modal-header h3{margin:0;font-size:18px}
+.assign-modal-close{border:0;background:transparent;color:#fff;font-size:26px;line-height:1;cursor:pointer;padding:2px 7px}
+.assign-modal-body{padding:18px}
+.assign-modal-body .grid{margin-top:0}
+@media(max-width:700px){#inboxFormWrap{padding:8px}.assign-modal-header{padding:12px 14px}.assign-modal-body{padding:14px}.assign-modal-header h3{font-size:16px}}
 </style>
 <style id="plus-features-css">
 .plus-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}.plus-card{background:#fff;border:1px solid #dfe6ee;border-radius:12px;padding:14px;box-shadow:0 2px 7px #0000000a}.plus-card h3{margin:0 0 8px}.plus-stat{font-size:25px;font-weight:800}.plus-muted{color:#667085;font-size:12px}.plus-table{width:100%;border-collapse:collapse;font-size:13px}.plus-table th,.plus-table td{border:1px solid #e1e6eb;padding:7px;text-align:left}.plus-table th{background:#f4f7fa}.plus-scroll{overflow:auto;max-height:430px}.plus-tag{display:inline-block;padding:3px 7px;border-radius:10px;background:#edf2f7;margin:2px;font-size:11px}.plus-danger{font-weight:700}.plus-ok{font-weight:700}.plus-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.plus-file{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px;border:1px solid #e1e6eb;border-radius:8px;margin:6px 0}.plus-note{padding:8px;border-left:4px solid #17365d;background:#f8fafc;margin:7px 0;border-radius:6px}
@@ -191,6 +200,22 @@ main{padding-left:318px;}
 .infoTickerLabel{flex:0 0 auto;display:flex;align-items:center;padding:0 18px;background:#17365d;color:#fff;font-weight:800;font-size:14px}.infoTickerViewport{position:relative;flex:1;min-width:0;overflow:hidden;display:flex;align-items:center}.infoTickerTrack{display:flex;align-items:center;gap:34px;white-space:nowrap;will-change:transform;animation:infoTickerMove 32s linear infinite}.infoTickerTrack.paused{animation-play-state:paused}.infoTickerItem{font-size:13px;font-weight:600;color:#3b4b5c;display:inline-flex;align-items:center;gap:7px}.infoTickerControls{display:flex;align-items:center;gap:6px;padding:0 8px;background:#fff;flex:0 0 auto}.infoTickerControls button{border:0;border-radius:6px;background:#17365d;color:#fff;width:38px;height:38px;cursor:pointer;font-size:17px}.infoTickerControls button:hover{background:#0f2a49}@keyframes infoTickerMove{from{transform:translateX(0)}to{transform:translateX(-55%)}}
 .scrollModalBackdrop{position:fixed;inset:0;background:#0007;display:none;align-items:center;justify-content:center;z-index:1000;padding:18px}.scrollModalBackdrop.show{display:flex}.scrollModal{width:min(760px,96vw);max-height:90vh;overflow:auto;background:#fff;border-radius:10px;box-shadow:0 18px 50px #0005;border:1px solid #ccd7e2}.scrollModalHeader{display:flex;align-items:center;justify-content:space-between;background:#17365d;color:#fff;padding:14px 18px}.scrollModalHeader h3{margin:0;font-size:18px}.scrollModalHeader button{border:0;background:transparent;color:#fff;font-size:24px;cursor:pointer}.scrollModalBody{padding:16px}.scrollMsgRow{display:flex;gap:8px;align-items:center;margin:7px 0}.scrollMsgRow input[type=text]{flex:1}.scrollMsgRow input[type=radio]{width:auto}.scrollMsgRow button{padding:9px 12px;border:1px solid #ccd4dd;background:#f4f6f8;border-radius:6px;cursor:pointer}.scrollMsgActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 @media(max-width:700px){.infoTicker{position:sticky;top:0;margin:8px;height:46px}.infoTickerLabel{padding:0 12px;font-size:12px}.infoTickerControls button{width:34px;height:34px}.infoTickerItem{font-size:12px}.infoTickerTrack{gap:24px;animation-duration:24s}}
+</style>
+
+<style id="form-entry-buttons-v2">
+.section-addbar{display:flex;justify-content:flex-end;align-items:center;min-height:44px}
+.form-entry-card.hidden{display:none!important}
+</style>
+<style id="all-form-popup-v1">
+.form-popup-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.48);z-index:9998;display:flex;align-items:center;justify-content:center;padding:18px}
+body.form-popup-open{overflow:hidden}
+/* Keep form cards hidden on their normal pages; show them only inside the Add popup. */
+main>section .form-entry-card{display:none!important}
+.form-popup-card{display:block!important}
+.form-popup-card{position:relative!important;z-index:9999!important;width:min(1050px,96vw)!important;max-height:92vh!important;overflow:auto!important;margin:0!important;border:1px solid #cbd5e1!important;border-radius:12px!important;box-shadow:0 24px 70px rgba(15,23,42,.32)!important;background:#fff!important}
+.form-popup-close{position:absolute;right:12px;top:10px;width:36px;height:36px;border:0;border-radius:8px;background:#17365d;color:#fff;font-size:24px;line-height:1;cursor:pointer;z-index:3}
+.form-popup-card>h2,.form-popup-card>h3{padding-right:52px}
+@media(max-width:700px){.form-popup-backdrop{padding:8px}.form-popup-card{width:98vw!important;max-height:94vh!important}.form-popup-close{right:8px;top:8px}}
 </style>
 </head>
 <body>
@@ -319,9 +344,10 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 <div class="actions" style="margin:12px 0 14px;display:flex!important;visibility:visible!important;opacity:1!important">
   <button type="button" class="primary" id="assignWorkBtn" onclick="openAssignWorkForm()" style="display:inline-flex!important;visibility:visible!important;opacity:1!important">➕ Assign Work</button>
 </div>
-<div id="inboxFormWrap">
-
-<div id="assignWorkFormWrap" class="hidden">
+<div id="inboxFormWrap" onclick="if(event.target===this)closeAssignWorkForm()">
+<div id="assignWorkFormWrap" class="hidden assign-modal">
+<div class="assign-modal-header"><h3 id="assignWorkModalTitle">➕ Assign New Work</h3><button type="button" class="assign-modal-close" onclick="closeAssignWorkForm()" aria-label="Close">×</button></div>
+<div class="assign-modal-body">
 <form id="inboxForm">
 
 <div class="grid">
@@ -350,6 +376,7 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 </form>
 </div>
 </div>
+</div>
 <div class="card"><h3>Pending Work</h3><div class="toolbar"><input id="inboxSearch" placeholder="🔎 Search project, given by, category..." oninput="renderInbox()"></div><div id="pendingList"></div></div>
 </section>
 
@@ -362,7 +389,8 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 </section>
 
 <section id="reminders" class="hidden">
-<div class="card"><h2>📞 Call / Follow-up Reminder</h2>
+<div class="card"><div class="section-addbar"><button class="primary" type="button" onclick="openFormPopupForTab('reminders')">➕ Add Reminder</button></div></div>
+<div class="card form-entry-card"><h2>📞 Call / Follow-up Reminder</h2>
 <form id="reminderForm">
 <div class="grid">
 <div><label>Person Name</label><input id="rPerson" required></div>
@@ -384,7 +412,8 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 
 
 <section id="leave" class="hidden">
-<div class="card"><h2>🏖️ Leave Entry</h2>
+<div class="card"><div class="section-addbar"><button class="primary" type="button" onclick="openFormPopupForTab('leave')">➕ Add Leave</button></div></div>
+<div class="card form-entry-card"><h2>🏖️ Leave Entry</h2>
 <div class="info">Enter your leave date here. Leave days will also appear in the monthly calendar on the Dashboard.</div>
 <form id="leaveForm">
 <div class="grid">
@@ -434,7 +463,8 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 <div id="formMsg"></div></form></div></section>
 
 <section id="completedForm" class="hidden">
-<div class="card">
+<div class="card"><div class="section-addbar"><button class="primary" type="button" onclick="openFormPopupForTab('completedForm')">➕ Add Completed Task</button></div></div>
+<div class="card form-entry-card">
 <h2>✅ Completed Task Form</h2>
 <div class="info">Only tasks currently in <b>My Work</b> can be selected here. Enter the completed details and save. The same My Work task will immediately move to <b>Completed Task History</b>.</div>
 <form id="completedTaskForm">
@@ -473,7 +503,8 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
   <div class="plus-card"><h3>👤 Person Wise Summary</h3><div id="plusGivenBy"></div></div>
   <div class="plus-card"><h3>🏢 Unit Wise Work</h3><div id="plusUnitWise"></div></div>
 </div>
-<div class="plus-card" style="margin-top:12px"><h3>👤 Person Master</h3>
+<div class="card" style="margin-top:12px"><div class="section-addbar"><button class="primary" type="button" onclick="openFormPopupForTab('plus')">➕ Add / Manage Person Master</button></div></div>
+<div id="personMasterCard" class="plus-card form-entry-card" style="margin-top:12px"><h3>👤 Person Master</h3>
   <div class="grid">
     <div><label>Select Existing Person</label><select id="plusPersonSelect" onchange="plusLoadPerson()"><option value="">-- Select Person --</option></select></div>
     <div><label>Name</label><input id="plusPersonName" placeholder="Person Name"></div>
@@ -489,7 +520,8 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 
 
 <section id="report" class="hidden">
-<div class="card">
+<div class="card"><div class="section-addbar"><button class="primary" type="button" onclick="openFormPopupForTab('report')">➕ Create Report</button></div></div>
+<div class="card form-entry-card">
 <h2>📊 Work Reports</h2>
 <div class="info">Generate completed work reports separately by Work Sub Category. The Excel format follows the supplied Work Report.xlsx structure.</div>
 <div class="grid">
@@ -628,11 +660,12 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 </section>
 
 <section id="unitVisit" class="hidden">
+<div class="card"><div class="section-addbar"><button class="primary" type="button" onclick="openFormPopupForTab('unitVisit')">➕ Add Unit Visit</button></div></div>
 <div class="card">
   <h2>🚗 Unit Visit / Travel</h2>
   <div class="info">Home Unit: <b>Tirunelveli Unit</b>. Record when you leave for another Unit and when you return.</div>
 </div>
-<div class="card">
+<div class="card form-entry-card">
   <h3>➕ New Unit Visit</h3>
   <form id="unitVisitForm">
     <input type="hidden" id="uvEditingId" value="">
@@ -746,7 +779,54 @@ async function signup(){const r=await sb.auth.signUp({email:$('email').value,pas
 async function logout(){await sb.auth.signOut();user=null;showLogin()}
 function showLogin(){$('nav').classList.add('hidden');document.querySelectorAll('main>section').forEach(x=>x.classList.add('hidden'));$('login').classList.remove('hidden');$('userbar').textContent='Not logged in'}
 function openDashboard(){$('nav').classList.remove('hidden');$('login').classList.add('hidden');$('userbar').textContent='Signed in: '+user.email;showTab('dashboard',document.querySelector('nav button'));loadAll()}
+let activeFormPopup=null;
+function popupTargetForTab(id){
+  // Open the actual form card in a popup, not the Add-button card.
+  // This keeps the page visible underneath and makes every form behave like Assign Work.
+  if(id==='completedForm') return document.querySelector('#completedForm>.card.form-entry-card');
+  if(id==='reminders') return document.querySelector('#reminders>.card.form-entry-card');
+  if(id==='leave') return document.querySelector('#leave>.card.form-entry-card');
+  if(id==='report') return document.querySelector('#report>.card.form-entry-card');
+  if(id==='unitVisit') return document.querySelector('#unitVisit>.card.form-entry-card');
+  if(id==='plus') return document.getElementById('personMasterCard');
+  return null;
+}
+function closeFormPopup(){
+  if(!activeFormPopup)return;
+  const st=activeFormPopup;
+  const el=st.el;
+  if(st.wasHidden) el.classList.add('hidden');
+  if(st.next && st.next.parentNode===st.parent) st.parent.insertBefore(el,st.next);
+  else st.parent.appendChild(el);
+  if(st.closeBtn) st.closeBtn.remove();
+  st.el.classList.remove('form-popup-card');
+  if(st.backdrop) st.backdrop.remove();
+  activeFormPopup=null;
+  document.body.classList.remove('form-popup-open');
+}
+function openFormPopupForTab(id){
+  const el=popupTargetForTab(id);
+  if(!el)return;
+  closeFormPopup();
+  const parent=el.parentNode;
+  const next=el.nextSibling;
+  const backdrop=document.createElement('div');
+  backdrop.className='form-popup-backdrop';
+  backdrop.addEventListener('click',e=>{if(e.target===backdrop)closeFormPopup()});
+  const closeBtn=document.createElement('button');
+  closeBtn.type='button'; closeBtn.className='form-popup-close'; closeBtn.innerHTML='×'; closeBtn.title='Close';
+  closeBtn.onclick=closeFormPopup;
+  const wasHidden=el.classList.contains('hidden');
+  el.classList.remove('hidden');
+  el.classList.add('form-popup-card');
+  el.appendChild(closeBtn);
+  backdrop.appendChild(el);
+  document.body.appendChild(backdrop);
+  activeFormPopup={el,parent,next,backdrop,closeBtn,wasHidden};
+  document.body.classList.add('form-popup-open');
+}
 function showTab(id,btn){
+  closeFormPopup();
   document.querySelectorAll('main>section').forEach(x=>x.classList.add('hidden'));
   $(id).classList.remove('hidden');
   document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
@@ -887,16 +967,19 @@ async function pickSelectedInboxToHide(){
 }
 
 function openAssignWorkForm(prefillDate){
-  const wrap=$('assignWorkFormWrap'); if(!wrap)return;
+  const outer=$('inboxFormWrap'),wrap=$('assignWorkFormWrap'); if(!wrap)return;
+  if(outer)outer.classList.add('assign-modal-open');
   wrap.classList.remove('hidden');
   const dateEl=$('wReceived');
   if(prefillDate && dateEl) dateEl.value=prefillDate;
   const btn=$('assignWorkBtn'); if(btn){btn.classList.add('hidden');btn.style.display='none';}
+  const title=$('assignWorkModalTitle'); if(title)title.textContent=editingInboxTaskId?'✏️ Edit / Update Work':'➕ Assign New Work';
   const first=wrap.querySelector('input,select,textarea'); if(first)first.focus();
 }
 function closeAssignWorkForm(){
-  const wrap=$('assignWorkFormWrap'); if(!wrap)return;
-  wrap.classList.add('hidden');
+  const outer=$('inboxFormWrap'),wrap=$('assignWorkFormWrap');
+  if(wrap)wrap.classList.add('hidden');
+  if(outer)outer.classList.remove('assign-modal-open');
   const btn=$('assignWorkBtn'); if(btn){btn.classList.remove('hidden');btn.style.display='inline-flex';}
   clearInboxForm();
 }
@@ -969,15 +1052,19 @@ let editingInboxTaskId=null;
 
 function openInboxAddForm(dateValue){
   const wrap=$('inboxFormWrap');
-  if(wrap)wrap.style.display='block';
+  const modal=$('assignWorkFormWrap');
+  if(wrap)wrap.classList.add('assign-modal-open');
+  if(modal)modal.classList.remove('hidden');
   const d=dateValue||$('wReceived')?.value||today;
   if($('wReceived'))$('wReceived').value=d;
   $('inboxMsg').innerHTML='';
-  setTimeout(()=>{ $('wGivenBy')?.focus(); wrap?.scrollIntoView({behavior:'smooth',block:'start'}); },50);
+  setTimeout(()=>$('wGivenBy')?.focus(),80);
 }
 function closeInboxAddForm(){
   const wrap=$('inboxFormWrap');
-  if(wrap)wrap.style.display='none';
+  const modal=$('assignWorkFormWrap');
+  if(modal)modal.classList.add('hidden');
+  if(wrap)wrap.classList.remove('assign-modal-open');
   clearInboxForm();
 }
 function addWorkFromCalendar(dateValue){
@@ -990,6 +1077,7 @@ function clearInboxForm(){
   $('wReceived').value=today;
   const btn=$('inboxForm').querySelector('button.primary');
   if(btn)btn.textContent='Assign Work';
+  const title=$('assignWorkModalTitle'); if(title)title.textContent='➕ Assign New Work';
 }
 
 function editInboxWork(id){
@@ -1010,7 +1098,7 @@ function editInboxWork(id){
   if(sub)sub.value=getEffectiveSubcat(t)||'';
   const btn=$('inboxForm').querySelector('button.primary');
   if(btn)btn.textContent='💾 Update Work';
-  $('inboxForm').scrollIntoView({behavior:'smooth',block:'start'});
+  const title=$('assignWorkModalTitle'); if(title)title.textContent='✏️ Edit / Update Work';
 }
 
 $('inboxForm').onsubmit=async e=>{
@@ -1963,7 +2051,7 @@ function uvDuration(a,b){if(!a||!b)return '-';const start=new Date((a.date||'')+
 function initUnitVisitForm(){if(!$('uvDepartureDate'))return;if(!$('uvDepartureDate').value)$('uvDepartureDate').value=today;if(!$('uvHomeUnit').value)$('uvHomeUnit').value='Tirunelveli Unit'}
 function clearUnitVisitForm(){const f=$('unitVisitForm');if(!f)return;f.reset();$('uvEditingId').value='';$('uvHomeUnit').value='Tirunelveli Unit';$('uvDepartureDate').value=today;$('uvSaveBtn').textContent='💾 Save Unit Visit';$('uvCancelBtn').classList.add('hidden');$('unitVisitMsg').innerHTML=''}
 function cancelUnitVisitEdit(){clearUnitVisitForm()}
-function editUnitVisit(id){const v=getUnitVisits().find(x=>x.id===id);if(!v)return;showTab('unitVisit',document.querySelector('nav button[onclick*="unitVisit"]'));$('uvEditingId').value=v.id;$('uvHomeUnit').value=v.home_unit||'Tirunelveli Unit';$('uvVisitUnit').value=v.visit_unit||'Madurai Unit';$('uvPurpose').value=v.purpose||'';$('uvDepartureDate').value=v.departure_date||today;$('uvDepartureTime').value=v.departure_time||'';$('uvReturnDate').value=v.return_date||'';$('uvReturnTime').value=v.return_time||'';$('uvRemarks').value=v.remarks||'';$('uvSaveBtn').textContent='💾 Update Unit Visit';$('uvCancelBtn').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
+function editUnitVisit(id){const v=getUnitVisits().find(x=>x.id===id);if(!v)return;showTab('unitVisit',document.querySelector('nav button[onclick*="unitVisit"]'));openFormPopupForTab('unitVisit');$('uvEditingId').value=v.id;$('uvHomeUnit').value=v.home_unit||'Tirunelveli Unit';$('uvVisitUnit').value=v.visit_unit||'Madurai Unit';$('uvPurpose').value=v.purpose||'';$('uvDepartureDate').value=v.departure_date||today;$('uvDepartureTime').value=v.departure_time||'';$('uvReturnDate').value=v.return_date||'';$('uvReturnTime').value=v.return_time||'';$('uvRemarks').value=v.remarks||'';$('uvSaveBtn').textContent='💾 Update Unit Visit';$('uvCancelBtn').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
 async function deleteUnitVisit(id){if(!confirm('Delete this Unit Visit record?'))return;setUnitVisits(getUnitVisits().filter(x=>x.id!==id));await deleteUnitVisitCloud(id);await loadUnitVisitsCloud();renderUnitVisits()}
 function renderUnitVisits(){const box=$('unitVisitList');if(!box)return;const q=($('unitVisitSearch')?.value||'').trim().toLowerCase();let a=getUnitVisits().filter(v=>!q||[v.home_unit,v.visit_unit,v.purpose,v.remarks,v.departure_date,v.return_date].filter(Boolean).join(' ').toLowerCase().includes(q));a.sort((x,y)=>String(y.departure_date||'').localeCompare(String(x.departure_date||''))||String(y.departure_time||'').localeCompare(String(x.departure_time||'')));box.innerHTML=a.length?a.map(v=>{const returned=!!(v.return_date&&v.return_time);const dur=returned?uvDuration({date:v.departure_date,time:v.departure_time},{date:v.return_date,time:v.return_time}):'-';return `<div class="task"><h3>🚗 ${esc(v.visit_unit||'-')} <span class="badge ${returned?'done':'progress'}">${returned?'Returned':'On Visit'}</span></h3><div class="meta"><b>From:</b> ${esc(v.home_unit||'Tirunelveli Unit')} • <b>Purpose:</b> ${esc(v.purpose||'-')}<br><b>Departure:</b> ${esc(uvDate(v.departure_date))} ${esc(v.departure_time||'')}<br><b>Return:</b> ${returned?esc(uvDate(v.return_date))+' '+esc(v.return_time):'Not returned'} • <b>Duration:</b> ${esc(dur)}${v.remarks?'<br>Remarks: '+esc(v.remarks):''}</div><div class="actions"><button class="secondary smallbtn" onclick="editUnitVisit('${esc(v.id)}')">✏️ Edit</button>${!returned?`<button class="primary smallbtn" onclick="markUnitVisitReturned('${esc(v.id)}')">🏠 Mark Returned</button>`:''}<button class="secondary smallbtn" onclick="deleteUnitVisit('${esc(v.id)}')">🗑️ Delete</button></div></div>`}).join(''):'<p>No Unit Visit records.</p>'}
 async function markUnitVisitReturned(id){const a=getUnitVisits();const v=a.find(x=>x.id===id);if(!v)return;const now=new Date();v.return_date=localISODate(now);v.return_time=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');v.updated_at=now.toISOString();setUnitVisits(a);await saveUnitVisitCloud(v);await loadUnitVisitsCloud();renderUnitVisits()}
