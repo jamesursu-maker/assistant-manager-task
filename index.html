@@ -217,6 +217,67 @@ main>section .form-entry-card{display:none!important}
 .form-popup-card>h2,.form-popup-card>h3{padding-right:52px}
 @media(max-width:700px){.form-popup-backdrop{padding:8px}.form-popup-card{width:98vw!important;max-height:94vh!important}.form-popup-close{right:8px;top:8px}}
 </style>
+
+<style id="mobile-responsive-final-v1">
+/* Final mobile/PWA layout fix: prevent the desktop 300px sidebar from squeezing the page. */
+@media (max-width: 900px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden;}
+  header{position:relative;top:auto;padding:12px 12px 10px;}
+  .appHeader{align-items:center;gap:10px;}
+  .brandText h1{font-size:17px;line-height:1.2;}
+  .brandText p{font-size:12px;}
+  .userbar{font-size:11px;}
+  .companyLogo{width:58px;height:58px;}
+  #installAppBtn{right:76px!important;top:10px!important;font-size:11px!important;padding:7px 9px!important;}
+
+  nav.sidebarNav{position:relative!important;left:auto!important;top:auto!important;bottom:auto!important;width:100%!important;height:auto!important;max-height:none!important;
+    display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px!important;
+    overflow:visible!important;padding:7px!important;background:#fff!important;box-shadow:0 2px 6px #0001!important;border-right:0!important;z-index:4;}
+  .sidebarNav .menuGroup{margin:0!important;border:0!important;background:transparent!important;display:contents!important;}
+  .sidebarNav .menuItems{display:contents!important;padding:0!important;background:transparent!important;}
+  .sidebarNav .menuItems button,.sidebarNav .menuLogout button{
+    width:100%!important;min-height:40px!important;height:auto!important;margin:0!important;padding:9px 8px!important;
+    border:1px solid #d8e0e8!important;border-left:3px solid transparent!important;border-radius:6px!important;
+    background:#eef2f6!important;text-align:left!important;font-size:12px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+  }
+  .sidebarNav .menuItems button.active{background:#17365d!important;color:#fff!important;border-left-color:#f2c300!important;}
+  .sidebarNav .menuLogout{grid-column:1/-1!important;margin:2px 0 0!important;padding:5px 0 0!important;border-top:1px solid #dfe5ec!important;}
+  .sidebarNav .menuLogout .menuItems{display:block!important;}
+  .sidebarNav .menuLogout button{display:block!important;text-align:center!important;}
+
+  #infoTicker,.infoTicker{position:relative!important;top:auto!important;left:auto!important;width:calc(100% - 14px)!important;margin:7px!important;height:46px!important;}
+  .infoTickerLabel{padding:0 10px!important;font-size:12px!important;}
+  .infoTickerControls{padding:0 5px!important;gap:4px!important;}
+  .infoTickerControls button{width:34px!important;height:34px!important;font-size:15px!important;}
+  .infoTickerItem{font-size:11px!important;}
+
+  main{width:100%!important;max-width:none!important;margin:0!important;padding:8px!important;}
+  main>section{width:100%!important;max-width:none!important;}
+  .card{padding:12px!important;border-radius:9px!important;}
+  .grid{grid-template-columns:1fr!important;}
+  .dashboardTop,.dashboardLists{grid-template-columns:1fr!important;}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  input,select,textarea{font-size:16px!important;min-width:0!important;}
+  .tabs2{gap:4px!important;}
+  .tabs2 button{font-size:12px!important;}
+  .task{padding:10px!important;}
+
+  .form-popup-backdrop,#inboxFormWrap,.scrollModalBackdrop{padding:6px!important;align-items:flex-start!important;}
+  .form-popup-card,#assignWorkFormWrap.assign-modal,.scrollModal{width:100%!important;max-width:100%!important;max-height:96vh!important;margin-top:6px!important;border-radius:9px!important;}
+  .form-popup-card{overflow:auto!important;}
+  .assign-modal-body,.scrollModalBody{padding:12px!important;}
+  .assign-modal-header,.scrollModalHeader{padding:11px 13px!important;}
+}
+
+@media (max-width: 480px){
+  .brandText h1{font-size:15px;}
+  .companyLogo{width:50px;height:50px;}
+  nav.sidebarNav{grid-template-columns:1fr 1fr!important;}
+  .sidebarNav .menuItems button,.sidebarNav .menuLogout button{font-size:11px!important;min-height:38px!important;padding:8px 7px!important;}
+  .kpis{grid-template-columns:1fr 1fr!important;}
+  .infoTickerLabel{font-size:11px!important;padding:0 8px!important;}
+}
+</style>
 </head>
 <body>
 <header class="appHeader">
@@ -1698,7 +1759,68 @@ function exportCompletedWorkExcel(){
   XLSX.writeFile(wb,`Completed_Work_Report_${date}.xlsx`);
   msg('reportMsg','Excel report created. All filtered completed works are included, including uncategorized works.','ok');
 }
-function printReport(){const box=$('reportBox');if(!box||!box.innerText.trim()){msg('reportMsg','Generate the report first.','error');return}const w=window.open('','_blank','width=1100,height=800');if(!w){msg('reportMsg','Please allow pop-ups to print the report.','error');return}w.document.write(`<html><head><title>Completed Work Report</title><style>body{font-family:Arial;padding:24px}.report-table{width:100%;border-collapse:collapse;margin-bottom:18px}.report-table th,.report-table td{border:1px solid #ddd;padding:7px}.report-table th{background:#f5f5f5}</style></head><body><h1>📊 Completed Work Report</h1>${box.innerHTML}</body></html>`);w.document.close();w.focus();setTimeout(()=>w.print(),300)}
+function printReport(){const box=$('reportBox');if(!box||!box.innerText.trim()){msg('reportMsg','Generate the report first.','error');return}const w=window.open('','_blank','width=1100,height=800');if(!w){msg('reportMsg','Please allow pop-ups to print the report.','error');return}w.document.write(`<html><head><title>Completed Work Report</title><style>body{font-family:Arial;padding:24px}.report-table{width:100%;border-collapse:collapse;margin-bottom:18px}.report-table th,.report-table td{border:1px solid #ddd;padding:7px}.report-table th{background:#f5f5f5}</style>
+<style id="mobile-responsive-final-v1">
+/* Final mobile/PWA layout fix: prevent the desktop 300px sidebar from squeezing the page. */
+@media (max-width: 900px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden;}
+  header{position:relative;top:auto;padding:12px 12px 10px;}
+  .appHeader{align-items:center;gap:10px;}
+  .brandText h1{font-size:17px;line-height:1.2;}
+  .brandText p{font-size:12px;}
+  .userbar{font-size:11px;}
+  .companyLogo{width:58px;height:58px;}
+  #installAppBtn{right:76px!important;top:10px!important;font-size:11px!important;padding:7px 9px!important;}
+
+  nav.sidebarNav{position:relative!important;left:auto!important;top:auto!important;bottom:auto!important;width:100%!important;height:auto!important;max-height:none!important;
+    display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px!important;
+    overflow:visible!important;padding:7px!important;background:#fff!important;box-shadow:0 2px 6px #0001!important;border-right:0!important;z-index:4;}
+  .sidebarNav .menuGroup{margin:0!important;border:0!important;background:transparent!important;display:contents!important;}
+  .sidebarNav .menuItems{display:contents!important;padding:0!important;background:transparent!important;}
+  .sidebarNav .menuItems button,.sidebarNav .menuLogout button{
+    width:100%!important;min-height:40px!important;height:auto!important;margin:0!important;padding:9px 8px!important;
+    border:1px solid #d8e0e8!important;border-left:3px solid transparent!important;border-radius:6px!important;
+    background:#eef2f6!important;text-align:left!important;font-size:12px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+  }
+  .sidebarNav .menuItems button.active{background:#17365d!important;color:#fff!important;border-left-color:#f2c300!important;}
+  .sidebarNav .menuLogout{grid-column:1/-1!important;margin:2px 0 0!important;padding:5px 0 0!important;border-top:1px solid #dfe5ec!important;}
+  .sidebarNav .menuLogout .menuItems{display:block!important;}
+  .sidebarNav .menuLogout button{display:block!important;text-align:center!important;}
+
+  #infoTicker,.infoTicker{position:relative!important;top:auto!important;left:auto!important;width:calc(100% - 14px)!important;margin:7px!important;height:46px!important;}
+  .infoTickerLabel{padding:0 10px!important;font-size:12px!important;}
+  .infoTickerControls{padding:0 5px!important;gap:4px!important;}
+  .infoTickerControls button{width:34px!important;height:34px!important;font-size:15px!important;}
+  .infoTickerItem{font-size:11px!important;}
+
+  main{width:100%!important;max-width:none!important;margin:0!important;padding:8px!important;}
+  main>section{width:100%!important;max-width:none!important;}
+  .card{padding:12px!important;border-radius:9px!important;}
+  .grid{grid-template-columns:1fr!important;}
+  .dashboardTop,.dashboardLists{grid-template-columns:1fr!important;}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  input,select,textarea{font-size:16px!important;min-width:0!important;}
+  .tabs2{gap:4px!important;}
+  .tabs2 button{font-size:12px!important;}
+  .task{padding:10px!important;}
+
+  .form-popup-backdrop,#inboxFormWrap,.scrollModalBackdrop{padding:6px!important;align-items:flex-start!important;}
+  .form-popup-card,#assignWorkFormWrap.assign-modal,.scrollModal{width:100%!important;max-width:100%!important;max-height:96vh!important;margin-top:6px!important;border-radius:9px!important;}
+  .form-popup-card{overflow:auto!important;}
+  .assign-modal-body,.scrollModalBody{padding:12px!important;}
+  .assign-modal-header,.scrollModalHeader{padding:11px 13px!important;}
+}
+
+@media (max-width: 480px){
+  .brandText h1{font-size:15px;}
+  .companyLogo{width:50px;height:50px;}
+  nav.sidebarNav{grid-template-columns:1fr 1fr!important;}
+  .sidebarNav .menuItems button,.sidebarNav .menuLogout button{font-size:11px!important;min-height:38px!important;padding:8px 7px!important;}
+  .kpis{grid-template-columns:1fr 1fr!important;}
+  .infoTickerLabel{font-size:11px!important;padding:0 8px!important;}
+}
+</style>
+</head><body><h1>📊 Completed Work Report</h1>${box.innerHTML}</body></html>`);w.document.close();w.focus();setTimeout(()=>w.print(),300)}
 
 async function loadRevisionTimeline(taskId){
   const box=$('revisionTimeline');if(!box)return;
@@ -2243,7 +2365,68 @@ async function plusRenderAttachments(){const box=$('plusAttachList');if(!box)ret
 async function plusOpenAttachment(path){if(!sb)return;const r=await sb.storage.from('task-attachments').createSignedUrl(path,3600);if(r.error){alert(r.error.message);return}window.open(r.data.signedUrl,'_blank')}
 function plusSaveNote(){const id=$('plusNoteWork')?.value;if(!id){alert('Select a Work.');return}const t=tasks.find(x=>x.id===id),a=plusArr(PLUS_NOTE_KEY);a.push({id:'n_'+Date.now(),task_id:id,project:t?.project||'-',date:$('plusNoteDate').value,note:$('plusNoteText').value.trim(),created_at:new Date().toISOString()});plusSet(PLUS_NOTE_KEY,a);$('plusNoteText').value='';plusRenderNotes()}
 function plusRenderNotes(){const box=$('plusNotes');if(!box)return;const id=$('plusNoteWork')?.value||'';const a=plusArr(PLUS_NOTE_KEY).filter(x=>!id||x.task_id===id).sort((x,y)=>String(y.date||'').localeCompare(String(x.date||'')));box.innerHTML=a.length?a.map(x=>`<div class="plus-note"><b>${plusEsc(reportDate(x.date))}</b><br>${plusEsc(x.note||'')}</div>`).join(''):'<p class="plus-muted">No notes for this work.</p>'}
-function plusIndividualReport(){const id=$('plusIndividualWork')?.value;if(!id){alert('Select a Work.');return}const t=tasks.find(x=>x.id===id);if(!t)return;const notes=plusArr(PLUS_NOTE_KEY).filter(x=>x.task_id===id),f=plusArr(PLUS_FOLLOW_KEY).filter(x=>x.task_id===id),att=plusArr(PLUS_ATTACH_KEY).filter(x=>x.task_id===id);const html=`<!doctype html><html><head><meta charset="utf-8"><title>Individual Work Report</title><style>body{font-family:Arial;padding:25px}h1{font-size:22px}table{border-collapse:collapse;width:100%;margin:12px 0}td,th{border:1px solid #bbb;padding:8px;text-align:left}th{width:28%;background:#f2f2f2}@media print{button{display:none}}</style></head><body><button onclick="print()">Print</button><h1>Individual Work Report</h1><table><tr><th>Project / Work</th><td>${plusEsc(t.project)}</td></tr><tr><th>Unit</th><td>${plusEsc(t.unit)}</td></tr><tr><th>Category</th><td>${plusEsc(t.category)}</td></tr><tr><th>Sub Category</th><td>${plusEsc(reportSub(t)||'-')}</td></tr><tr><th>Given By / Reference</th><td>${plusEsc(t.assigned_by||t.given_by||'-')}</td></tr><tr><th>Status</th><td>${plusEsc(t.status)}</td></tr><tr><th>Priority</th><td>${plusEsc(t.priority||'-')}</td></tr><tr><th>Start Date</th><td>${plusEsc(reportDate(t.start_date))}</td></tr><tr><th>Due Date</th><td>${plusEsc(reportDate(t.due_date))}</td></tr><tr><th>Completed Date</th><td>${plusEsc(reportDate(plusDate(t)))}</td></tr><tr><th>Actual Activity</th><td>${plusEsc(t.actual_activity||'-')}</td></tr><tr><th>Remarks</th><td>${plusEsc(t.remarks||'-')}</td></tr></table><h3>Notes / Follow-up History</h3>${notes.length?notes.map(x=>`<p><b>${plusEsc(reportDate(x.date))}</b> — ${plusEsc(x.note)}</p>`).join(''):'<p>None</p>'}<h3>Reminders / Follow-ups</h3>${f.length?f.map(x=>`<p><b>${plusEsc(x.date)} ${plusEsc(x.time||'')}</b> — ${plusEsc(x.note)}</p>`).join(''):'<p>None</p>'}<h3>Attachments</h3>${att.length?att.map(x=>`<p>📎 ${plusEsc(x.name)}</p>`).join(''):'<p>None</p>'}</body></html>`;const w=window.open('','_blank');if(!w){alert('Allow pop-ups for this site.');return}w.document.write(html);w.document.close()}
+function plusIndividualReport(){const id=$('plusIndividualWork')?.value;if(!id){alert('Select a Work.');return}const t=tasks.find(x=>x.id===id);if(!t)return;const notes=plusArr(PLUS_NOTE_KEY).filter(x=>x.task_id===id),f=plusArr(PLUS_FOLLOW_KEY).filter(x=>x.task_id===id),att=plusArr(PLUS_ATTACH_KEY).filter(x=>x.task_id===id);const html=`<!doctype html><html><head><meta charset="utf-8"><title>Individual Work Report</title><style>body{font-family:Arial;padding:25px}h1{font-size:22px}table{border-collapse:collapse;width:100%;margin:12px 0}td,th{border:1px solid #bbb;padding:8px;text-align:left}th{width:28%;background:#f2f2f2}@media print{button{display:none}}</style>
+<style id="mobile-responsive-final-v1">
+/* Final mobile/PWA layout fix: prevent the desktop 300px sidebar from squeezing the page. */
+@media (max-width: 900px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden;}
+  header{position:relative;top:auto;padding:12px 12px 10px;}
+  .appHeader{align-items:center;gap:10px;}
+  .brandText h1{font-size:17px;line-height:1.2;}
+  .brandText p{font-size:12px;}
+  .userbar{font-size:11px;}
+  .companyLogo{width:58px;height:58px;}
+  #installAppBtn{right:76px!important;top:10px!important;font-size:11px!important;padding:7px 9px!important;}
+
+  nav.sidebarNav{position:relative!important;left:auto!important;top:auto!important;bottom:auto!important;width:100%!important;height:auto!important;max-height:none!important;
+    display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px!important;
+    overflow:visible!important;padding:7px!important;background:#fff!important;box-shadow:0 2px 6px #0001!important;border-right:0!important;z-index:4;}
+  .sidebarNav .menuGroup{margin:0!important;border:0!important;background:transparent!important;display:contents!important;}
+  .sidebarNav .menuItems{display:contents!important;padding:0!important;background:transparent!important;}
+  .sidebarNav .menuItems button,.sidebarNav .menuLogout button{
+    width:100%!important;min-height:40px!important;height:auto!important;margin:0!important;padding:9px 8px!important;
+    border:1px solid #d8e0e8!important;border-left:3px solid transparent!important;border-radius:6px!important;
+    background:#eef2f6!important;text-align:left!important;font-size:12px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+  }
+  .sidebarNav .menuItems button.active{background:#17365d!important;color:#fff!important;border-left-color:#f2c300!important;}
+  .sidebarNav .menuLogout{grid-column:1/-1!important;margin:2px 0 0!important;padding:5px 0 0!important;border-top:1px solid #dfe5ec!important;}
+  .sidebarNav .menuLogout .menuItems{display:block!important;}
+  .sidebarNav .menuLogout button{display:block!important;text-align:center!important;}
+
+  #infoTicker,.infoTicker{position:relative!important;top:auto!important;left:auto!important;width:calc(100% - 14px)!important;margin:7px!important;height:46px!important;}
+  .infoTickerLabel{padding:0 10px!important;font-size:12px!important;}
+  .infoTickerControls{padding:0 5px!important;gap:4px!important;}
+  .infoTickerControls button{width:34px!important;height:34px!important;font-size:15px!important;}
+  .infoTickerItem{font-size:11px!important;}
+
+  main{width:100%!important;max-width:none!important;margin:0!important;padding:8px!important;}
+  main>section{width:100%!important;max-width:none!important;}
+  .card{padding:12px!important;border-radius:9px!important;}
+  .grid{grid-template-columns:1fr!important;}
+  .dashboardTop,.dashboardLists{grid-template-columns:1fr!important;}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  input,select,textarea{font-size:16px!important;min-width:0!important;}
+  .tabs2{gap:4px!important;}
+  .tabs2 button{font-size:12px!important;}
+  .task{padding:10px!important;}
+
+  .form-popup-backdrop,#inboxFormWrap,.scrollModalBackdrop{padding:6px!important;align-items:flex-start!important;}
+  .form-popup-card,#assignWorkFormWrap.assign-modal,.scrollModal{width:100%!important;max-width:100%!important;max-height:96vh!important;margin-top:6px!important;border-radius:9px!important;}
+  .form-popup-card{overflow:auto!important;}
+  .assign-modal-body,.scrollModalBody{padding:12px!important;}
+  .assign-modal-header,.scrollModalHeader{padding:11px 13px!important;}
+}
+
+@media (max-width: 480px){
+  .brandText h1{font-size:15px;}
+  .companyLogo{width:50px;height:50px;}
+  nav.sidebarNav{grid-template-columns:1fr 1fr!important;}
+  .sidebarNav .menuItems button,.sidebarNav .menuLogout button{font-size:11px!important;min-height:38px!important;padding:8px 7px!important;}
+  .kpis{grid-template-columns:1fr 1fr!important;}
+  .infoTickerLabel{font-size:11px!important;padding:0 8px!important;}
+}
+</style>
+</head><body><button onclick="print()">Print</button><h1>Individual Work Report</h1><table><tr><th>Project / Work</th><td>${plusEsc(t.project)}</td></tr><tr><th>Unit</th><td>${plusEsc(t.unit)}</td></tr><tr><th>Category</th><td>${plusEsc(t.category)}</td></tr><tr><th>Sub Category</th><td>${plusEsc(reportSub(t)||'-')}</td></tr><tr><th>Given By / Reference</th><td>${plusEsc(t.assigned_by||t.given_by||'-')}</td></tr><tr><th>Status</th><td>${plusEsc(t.status)}</td></tr><tr><th>Priority</th><td>${plusEsc(t.priority||'-')}</td></tr><tr><th>Start Date</th><td>${plusEsc(reportDate(t.start_date))}</td></tr><tr><th>Due Date</th><td>${plusEsc(reportDate(t.due_date))}</td></tr><tr><th>Completed Date</th><td>${plusEsc(reportDate(plusDate(t)))}</td></tr><tr><th>Actual Activity</th><td>${plusEsc(t.actual_activity||'-')}</td></tr><tr><th>Remarks</th><td>${plusEsc(t.remarks||'-')}</td></tr></table><h3>Notes / Follow-up History</h3>${notes.length?notes.map(x=>`<p><b>${plusEsc(reportDate(x.date))}</b> — ${plusEsc(x.note)}</p>`).join(''):'<p>None</p>'}<h3>Reminders / Follow-ups</h3>${f.length?f.map(x=>`<p><b>${plusEsc(x.date)} ${plusEsc(x.time||'')}</b> — ${plusEsc(x.note)}</p>`).join(''):'<p>None</p>'}<h3>Attachments</h3>${att.length?att.map(x=>`<p>📎 ${plusEsc(x.name)}</p>`).join(''):'<p>None</p>'}</body></html>`;const w=window.open('','_blank');if(!w){alert('Allow pop-ups for this site.');return}w.document.write(html);w.document.close()}
 </script>
 
 <script id="scrolling-information-js">
