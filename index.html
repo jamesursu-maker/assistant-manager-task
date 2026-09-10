@@ -48,6 +48,64 @@ button.primary{background:#17365d;color:#fff;border:0;border-radius:8px;padding:
 @media(max-width:850px){.dashboardTop{grid-template-columns:1fr}.companyLogo{width:60px;height:60px}}
 
 
+
+<style id="left-menu-hierarchy-v1">
+/* TNPSC-inspired hierarchical left navigation: one main menu with sub-menus below */
+nav.sidebarNav{
+  position:fixed;left:0;top:104px;bottom:0;width:300px;display:block;overflow-y:auto;
+  background:#fff;padding:10px 9px 18px;z-index:4;box-shadow:2px 0 8px #0001;
+  border-right:1px solid #d9e0e8;
+}
+/* Wider left menu: keep every menu label on a single line */
+.sidebarNav .menuTitle{white-space:nowrap;}
+.sidebarNav .menuItems button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+main{padding-left:318px;}
+.sidebarNav .menuGroup{margin:0 0 10px;border:1px solid #dfe5ec;background:#f8fafc;}
+.sidebarNav .menuTitle{
+  background:#17365d;color:#fff;font-size:11px;font-weight:bold;letter-spacing:.35px;
+  padding:9px 10px;border-bottom:1px solid #d0d9e4;
+}
+.sidebarNav .menuItems{padding:4px;background:#fff;}
+.sidebarNav .menuItems button{
+  display:block;width:100%;text-align:left;border:0;border-left:3px solid transparent;
+  border-radius:0;padding:9px 10px;background:#fff;white-space:normal;font-size:13px;
+  cursor:pointer;color:#243447;margin:1px 0;
+}
+.sidebarNav .menuItems button:hover{background:#eef3f8;border-left-color:#8c6b24;}
+.sidebarNav .menuItems button.active{background:#e8eef6;color:#17365d;border-left-color:#17365d;font-weight:bold;}
+.sidebarNav .menuLogout{margin-top:2px;border:0;background:transparent;}
+.sidebarNav .menuLogout .menuItems{background:transparent;padding:0;}
+.sidebarNav .menuLogout button{background:#eef2f6;border:1px solid #d4dce5;text-align:center;font-weight:bold;}
+.sidebarNav .navBadge{float:right;}
+@media(max-width:700px){
+  nav.sidebarNav{position:relative;top:0;left:auto;bottom:auto;width:100%;height:auto;max-height:none;
+    display:block;overflow:visible;padding:8px;background:#f4f6f8;box-shadow:0 2px 6px #0001;border-right:0;}
+  .sidebarNav .menuGroup{margin-bottom:7px;}
+  .sidebarNav .menuTitle{font-size:10px;padding:8px 10px;}
+  .sidebarNav .menuItems{display:grid;grid-template-columns:1fr 1fr;gap:2px;}
+  .sidebarNav .menuItems button{font-size:12px;padding:8px;}
+  .sidebarNav .menuLogout .menuItems{display:block;}
+}
+</style>
+</style>
+<style id="left-menu-clean-v2">
+/* Clean left navigation: no virtual section headings and no navigation scrollbar. */
+.sidebarNav{overflow-y:hidden !important;overflow-x:hidden !important;}
+.sidebarNav .menuTitle{display:none !important;}
+.sidebarNav .menuGroup{margin:0 !important;border:0 !important;background:transparent !important;}
+.sidebarNav .menuItems{padding:0 !important;background:transparent !important;}
+.sidebarNav .menuItems button{
+  min-height:39px;padding:8px 11px !important;margin:1px 0 !important;
+  white-space:nowrap !important;overflow:hidden;text-overflow:ellipsis;
+  border-left:3px solid transparent;border-radius:3px !important;
+}
+.sidebarNav .menuLogout{margin-top:5px !important;padding-top:5px;border-top:1px solid #dfe5ec !important;}
+.sidebarNav .menuLogout button{min-height:38px;}
+@media(max-width:700px){
+  .sidebarNav{overflow:visible !important;}
+  .sidebarNav .menuItems{display:block !important;}
+  .sidebarNav .menuItems button{min-height:38px !important;}
+}
 </style>
 
 <link rel="manifest" href="manifest.webmanifest">
@@ -127,6 +185,13 @@ button.primary{background:#17365d;color:#fff;border:0;border-radius:8px;padding:
 <style id="plus-features-css">
 .plus-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}.plus-card{background:#fff;border:1px solid #dfe6ee;border-radius:12px;padding:14px;box-shadow:0 2px 7px #0000000a}.plus-card h3{margin:0 0 8px}.plus-stat{font-size:25px;font-weight:800}.plus-muted{color:#667085;font-size:12px}.plus-table{width:100%;border-collapse:collapse;font-size:13px}.plus-table th,.plus-table td{border:1px solid #e1e6eb;padding:7px;text-align:left}.plus-table th{background:#f4f7fa}.plus-scroll{overflow:auto;max-height:430px}.plus-tag{display:inline-block;padding:3px 7px;border-radius:10px;background:#edf2f7;margin:2px;font-size:11px}.plus-danger{font-weight:700}.plus-ok{font-weight:700}.plus-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.plus-file{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px;border:1px solid #e1e6eb;border-radius:8px;margin:6px 0}.plus-note{padding:8px;border-left:4px solid #17365d;background:#f8fafc;margin:7px 0;border-radius:6px}
 </style>
+
+<style id="scrolling-information-v1">
+.infoTicker{position:sticky;top:104px;z-index:3;margin-left:318px;margin-right:18px;height:50px;display:flex;align-items:stretch;background:#fff;border:1px solid #d8e0e8;border-radius:7px;box-shadow:0 2px 8px #0000000d;overflow:hidden}
+.infoTickerLabel{flex:0 0 auto;display:flex;align-items:center;padding:0 18px;background:#17365d;color:#fff;font-weight:800;font-size:14px}.infoTickerViewport{position:relative;flex:1;min-width:0;overflow:hidden;display:flex;align-items:center}.infoTickerTrack{display:flex;align-items:center;gap:34px;white-space:nowrap;will-change:transform;animation:infoTickerMove 32s linear infinite}.infoTickerTrack.paused{animation-play-state:paused}.infoTickerItem{font-size:13px;font-weight:600;color:#3b4b5c;display:inline-flex;align-items:center;gap:7px}.infoTickerControls{display:flex;align-items:center;gap:6px;padding:0 8px;background:#fff;flex:0 0 auto}.infoTickerControls button{border:0;border-radius:6px;background:#17365d;color:#fff;width:38px;height:38px;cursor:pointer;font-size:17px}.infoTickerControls button:hover{background:#0f2a49}@keyframes infoTickerMove{from{transform:translateX(0)}to{transform:translateX(-55%)}}
+.scrollModalBackdrop{position:fixed;inset:0;background:#0007;display:none;align-items:center;justify-content:center;z-index:1000;padding:18px}.scrollModalBackdrop.show{display:flex}.scrollModal{width:min(760px,96vw);max-height:90vh;overflow:auto;background:#fff;border-radius:10px;box-shadow:0 18px 50px #0005;border:1px solid #ccd7e2}.scrollModalHeader{display:flex;align-items:center;justify-content:space-between;background:#17365d;color:#fff;padding:14px 18px}.scrollModalHeader h3{margin:0;font-size:18px}.scrollModalHeader button{border:0;background:transparent;color:#fff;font-size:24px;cursor:pointer}.scrollModalBody{padding:16px}.scrollMsgRow{display:flex;gap:8px;align-items:center;margin:7px 0}.scrollMsgRow input[type=text]{flex:1}.scrollMsgRow input[type=radio]{width:auto}.scrollMsgRow button{padding:9px 12px;border:1px solid #ccd4dd;background:#f4f6f8;border-radius:6px;cursor:pointer}.scrollMsgActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+@media(max-width:700px){.infoTicker{position:sticky;top:0;margin:8px;height:46px}.infoTickerLabel{padding:0 12px;font-size:12px}.infoTickerControls button{width:34px;height:34px}.infoTickerItem{font-size:12px}.infoTickerTrack{gap:24px;animation-duration:24s}}
+</style>
 </head>
 <body>
 <header class="appHeader">
@@ -152,21 +217,60 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 <div id="setupMsg"></div>
 </div>
 
-<nav id="nav" class="hidden">
-<button class="active" onclick="showTab('dashboard',this)">🏠 Dashboard</button>
-<button onclick="showTab('inbox',this)">📥 Work Inbox <span id="inboxCount" class="navBadge zero">0</span></button>
-<button onclick="showTab('mywork',this)">📋 My Work</button>
-<button onclick="showTab('task',this)">➕ Daily Activity</button>
-<button onclick="showTab('completedForm',this)">✅ Completed Task Form</button>
-<button onclick="showTab('reminders',this)">📞 Reminders</button><button onclick="showTab('leave',this)">🏖️ Leave</button>
-<button onclick="showTab('tasks',this)">📚 All Tasks</button>
-<button onclick="showTab('report',this)">📊 Reports</button>
-<button onclick="showTab('unitVisit',this)">🚗 Unit Visit / Travel</button>
-<button onclick="showTab('plus',this)">📈 Work Management Plus</button>
+<nav id="nav" class="hidden sidebarNav">
+  <div class="menuGroup">
+    <div class="menuTitle">🏠 MAIN MENU</div>
+    <div class="menuItems">
+      <button class="active" onclick="showTab('dashboard',this)">🏠 Dashboard</button>
+    </div>
+  </div>
 
-<button onclick="showTab('backup',this)">💾 Backup / Restore</button>
-<button onclick="logout()">Logout</button>
+  <div class="menuGroup">
+    <div class="menuTitle">📋 WORK MANAGEMENT</div>
+    <div class="menuItems">
+      <button onclick="showTab('inbox',this)">📥 Work Inbox <span id="inboxCount" class="navBadge zero">0</span></button>
+      <button onclick="showTab('mywork',this)">📋 My Work</button>
+      <button onclick="showTab('task',this)">➕ Daily Activity</button>
+      <button onclick="showTab('completedForm',this)">✅ Completed Task Form</button>
+      <button onclick="showTab('tasks',this)">📚 All Tasks</button>
+    </div>
+  </div>
+
+  <div class="menuGroup">
+    <div class="menuTitle">📅 PERSONAL / FOLLOW-UP</div>
+    <div class="menuItems">
+      <button onclick="showTab('reminders',this)">📞 Reminders</button>
+      <button onclick="showTab('leave',this)">🏖️ Leave</button>
+    </div>
+  </div>
+
+  <div class="menuGroup">
+    <div class="menuTitle">📊 REPORTS & VISIT</div>
+    <div class="menuItems">
+      <button onclick="showTab('report',this)">📊 Reports</button>
+      <button onclick="showTab('unitVisit',this)">🚗 Unit Visit / Travel</button>
+    </div>
+  </div>
+
+  <div class="menuGroup">
+    <div class="menuTitle">📈 ADDITIONAL</div>
+    <div class="menuItems">
+      <button onclick="showTab('plus',this)">📈 Work Management Plus</button>
+      <button onclick="showTab('backup',this)">💾 Backup / Restore</button>
+    </div>
+  </div>
+
+  <div class="menuGroup menuLogout">
+    <div class="menuItems">
+      <button onclick="logout()">🚪 Logout</button>
+    </div>
+  </div>
 </nav>
+
+<div id="infoTicker" class="infoTicker hidden">
+<div class="infoTickerLabel">📢 INFORMATION</div><div class="infoTickerViewport"><div id="infoTickerTrack" class="infoTickerTrack"></div></div>
+<div class="infoTickerControls"><button id="tickerPauseBtn" type="button" title="Pause / Play scrolling" onclick="toggleScrollingMessages()">Ⅱ</button><button type="button" title="Customize Scrolling Message" onclick="openScrollingManager()">⚙</button></div></div>
+<div id="scrollModalBackdrop" class="scrollModalBackdrop" onclick="if(event.target===this)closeScrollingManager()"><div class="scrollModal"><div class="scrollModalHeader"><h3>📢 Manage Scrolling Messages</h3><button type="button" onclick="closeScrollingManager()">×</button></div><div class="scrollModalBody"><div id="scrollMessageList"></div><div class="scrollMsgActions"><button class="primary" type="button" onclick="addScrollingMessage()">➕ Add Message</button><button class="secondary" type="button" onclick="moveScrollingMessage(-1)">▲ Move Up</button><button class="secondary" type="button" onclick="moveScrollingMessage(1)">▼ Move Down</button><button class="secondary" type="button" onclick="deleteSelectedScrollingMessage()">🗑 Delete Selected</button></div><div style="margin-top:14px"><label>New / Edit Message</label><input id="scrollMessageInput" type="text" placeholder="Enter scrolling information..." maxlength="220"></div><div class="scrollMsgActions"><button class="primary" type="button" onclick="saveScrollingMessage()">💾 Save Message</button><button class="secondary" type="button" onclick="clearScrollingMessageInput()">Clear</button><button class="secondary" type="button" onclick="closeScrollingManager()">Close</button></div><div class="small" style="margin-top:10px">Messages are saved in this browser. Select a message to edit, delete, or change its order.</div></div></div></div>
 
 <main id="app" class="hidden">
 <section id="login">
@@ -548,7 +652,7 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 </div>
 <div class="card">
   <h3>📋 Unit Visit History</h3>
-  <div class="toolbar"><input id="unitVisitSearch" placeholder="🔎 Search Unit / Purpose..." oninput="renderUnitVisits()"><button type="button" class="secondary smallbtn" onclick="refreshUnitVisitsMobile()">🔄 Refresh History</button></div>
+  <div class="toolbar"><input id="unitVisitSearch" placeholder="🔎 Search Unit / Purpose..." oninput="renderUnitVisits()"></div>
   <div id="unitVisitList"></div>
 </div>
 </section>
@@ -661,10 +765,7 @@ function showTab(id,btn){
   if(id==='unitVisit'){initUnitVisitForm();renderUnitVisits();}
   if(id==='plus'){plusInit();}
 }
-async function loadAll(){await loadTasks();await loadReminders();await loadLeaves();if(window.loadUnitVisitsCloud)await window.loadUnitVisitsCloud();populateRelatedWork();renderDashboard();renderInbox();renderMyWork();renderReminders();renderLeaves();renderUnitVisits();populateCompletedMyWork();renderCompletedTasks();if(typeof plusRenderPersonMaster==='function')plusRenderPersonMaster();if(typeof plusRenderGivenBy==='function')plusRenderGivenBy();
-  // Mobile/PWA can restore the auth session a moment after page load; refresh travel history once more.
-  if(window.loadUnitVisitsCloud){setTimeout(async()=>{try{await window.loadUnitVisitsCloud();renderUnitVisits();}catch(_){ }},1200);}
-}
+async function loadAll(){await loadTasks();await loadReminders();await loadLeaves();if(window.loadUnitVisitsCloud)await window.loadUnitVisitsCloud();populateRelatedWork();renderDashboard();renderInbox();renderMyWork();renderReminders();renderLeaves();renderUnitVisits();populateCompletedMyWork();renderCompletedTasks();if(typeof plusRenderPersonMaster==='function')plusRenderPersonMaster();if(typeof plusRenderGivenBy==='function')plusRenderGivenBy()}
 async function loadTasks(){
   const r=await sb.from('tasks').select('*').order('start_date',{ascending:false}).order('created_at',{ascending:false});
   if(r.error){msg('setupMsg','Database error: '+r.error.message,'error');return}
@@ -1834,26 +1935,15 @@ let unitVisitsCloudReady=false;
 function getUnitVisits(){try{const a=JSON.parse(localStorage.getItem(UNIT_VISIT_KEY)||'[]');return Array.isArray(a)?a:[]}catch(_){return []}}
 function setUnitVisits(a){localStorage.setItem(UNIT_VISIT_KEY,JSON.stringify(a||[]))}
 async function loadUnitVisitsCloud(){
-  const local=getUnitVisits();
-  if(!user||!sb){return local;}
+  if(!user||!sb)return getUnitVisits();
   try{
-    let r=await sb.from('unit_visits').select('*').eq('created_by',user.id).order('departure_date',{ascending:false}).order('departure_time',{ascending:false});
-    if(r.error){
-      // Retry once after authentication/session has settled on mobile PWA.
-      await new Promise(res=>setTimeout(res,400));
-      r=await sb.from('unit_visits').select('*').eq('created_by',user.id).order('departure_date',{ascending:false}).order('departure_time',{ascending:false});
-    }
-    if(r.error){unitVisitsCloudReady=false;return local;}
+    const r=await sb.from('unit_visits').select('*').eq('created_by',user.id).order('departure_date',{ascending:false}).order('departure_time',{ascending:false});
+    if(r.error) { unitVisitsCloudReady=false; return getUnitVisits(); }
     unitVisitsCloudReady=true;
-    const cloud=Array.isArray(r.data)?r.data:[];
-    // Merge local and cloud instead of overwriting local records. This prevents a mobile
-    // session from hiding locally saved visits when cloud loading is delayed.
-    const map=new Map();
-    [...local,...cloud].forEach(v=>{if(v&&v.id)map.set(String(v.id),v);});
-    const rows=Array.from(map.values()).sort((a,b)=>String(b.departure_date||'').localeCompare(String(a.departure_date||''))||String(b.departure_time||'').localeCompare(String(a.departure_time||'')));
+    const rows=Array.isArray(r.data)?r.data:[];
     setUnitVisits(rows);
     return rows;
-  }catch(_){unitVisitsCloudReady=false;return local;}
+  }catch(_){unitVisitsCloudReady=false;return getUnitVisits();}
 }
 async function saveUnitVisitCloud(row){
   if(!user||!sb)return false;
@@ -1887,8 +1977,6 @@ $('unitVisitForm').onsubmit=async e=>{e.preventDefault();const a=getUnitVisits()
   window.renderUnitVisits=renderUnitVisits;
   window.markUnitVisitReturned=markUnitVisitReturned;
   window.loadUnitVisitsCloud=loadUnitVisitsCloud;
-  async function refreshUnitVisitsMobile(){const box=$('unitVisitList');if(box)box.innerHTML='<p>Loading Unit Visit History...</p>';const rows=await loadUnitVisitsCloud();renderUnitVisits();if($('unitVisitMsg'))$('unitVisitMsg').innerHTML='<div class="msg ok">'+(unitVisitsCloudReady?'Unit Visit History refreshed from cloud.':'Showing available local Unit Visit History.')+'</div>';return rows;}
-  window.refreshUnitVisitsMobile=refreshUnitVisitsMobile;
 
   const P4_PERM_KEY='task_permissions_v2_'+(()=>{try{return (user&&user.id)||'guest'}catch(_){return 'guest'}})();
   const P4_CAT_KEY='task_custom_categories_v2';
@@ -2068,6 +2156,28 @@ async function plusOpenAttachment(path){if(!sb)return;const r=await sb.storage.f
 function plusSaveNote(){const id=$('plusNoteWork')?.value;if(!id){alert('Select a Work.');return}const t=tasks.find(x=>x.id===id),a=plusArr(PLUS_NOTE_KEY);a.push({id:'n_'+Date.now(),task_id:id,project:t?.project||'-',date:$('plusNoteDate').value,note:$('plusNoteText').value.trim(),created_at:new Date().toISOString()});plusSet(PLUS_NOTE_KEY,a);$('plusNoteText').value='';plusRenderNotes()}
 function plusRenderNotes(){const box=$('plusNotes');if(!box)return;const id=$('plusNoteWork')?.value||'';const a=plusArr(PLUS_NOTE_KEY).filter(x=>!id||x.task_id===id).sort((x,y)=>String(y.date||'').localeCompare(String(x.date||'')));box.innerHTML=a.length?a.map(x=>`<div class="plus-note"><b>${plusEsc(reportDate(x.date))}</b><br>${plusEsc(x.note||'')}</div>`).join(''):'<p class="plus-muted">No notes for this work.</p>'}
 function plusIndividualReport(){const id=$('plusIndividualWork')?.value;if(!id){alert('Select a Work.');return}const t=tasks.find(x=>x.id===id);if(!t)return;const notes=plusArr(PLUS_NOTE_KEY).filter(x=>x.task_id===id),f=plusArr(PLUS_FOLLOW_KEY).filter(x=>x.task_id===id),att=plusArr(PLUS_ATTACH_KEY).filter(x=>x.task_id===id);const html=`<!doctype html><html><head><meta charset="utf-8"><title>Individual Work Report</title><style>body{font-family:Arial;padding:25px}h1{font-size:22px}table{border-collapse:collapse;width:100%;margin:12px 0}td,th{border:1px solid #bbb;padding:8px;text-align:left}th{width:28%;background:#f2f2f2}@media print{button{display:none}}</style></head><body><button onclick="print()">Print</button><h1>Individual Work Report</h1><table><tr><th>Project / Work</th><td>${plusEsc(t.project)}</td></tr><tr><th>Unit</th><td>${plusEsc(t.unit)}</td></tr><tr><th>Category</th><td>${plusEsc(t.category)}</td></tr><tr><th>Sub Category</th><td>${plusEsc(reportSub(t)||'-')}</td></tr><tr><th>Given By / Reference</th><td>${plusEsc(t.assigned_by||t.given_by||'-')}</td></tr><tr><th>Status</th><td>${plusEsc(t.status)}</td></tr><tr><th>Priority</th><td>${plusEsc(t.priority||'-')}</td></tr><tr><th>Start Date</th><td>${plusEsc(reportDate(t.start_date))}</td></tr><tr><th>Due Date</th><td>${plusEsc(reportDate(t.due_date))}</td></tr><tr><th>Completed Date</th><td>${plusEsc(reportDate(plusDate(t)))}</td></tr><tr><th>Actual Activity</th><td>${plusEsc(t.actual_activity||'-')}</td></tr><tr><th>Remarks</th><td>${plusEsc(t.remarks||'-')}</td></tr></table><h3>Notes / Follow-up History</h3>${notes.length?notes.map(x=>`<p><b>${plusEsc(reportDate(x.date))}</b> — ${plusEsc(x.note)}</p>`).join(''):'<p>None</p>'}<h3>Reminders / Follow-ups</h3>${f.length?f.map(x=>`<p><b>${plusEsc(x.date)} ${plusEsc(x.time||'')}</b> — ${plusEsc(x.note)}</p>`).join(''):'<p>None</p>'}<h3>Attachments</h3>${att.length?att.map(x=>`<p>📎 ${plusEsc(x.name)}</p>`).join(''):'<p>None</p>'}</body></html>`;const w=window.open('','_blank');if(!w){alert('Allow pop-ups for this site.');return}w.document.write(html);w.document.close()}
+</script>
+
+<script id="scrolling-information-js">
+const SCROLL_MSG_KEY='assistant_manager_custom_scrolling_messages_v2';
+let scrollingMessages=[];let scrollingSelected=-1;let scrollingPaused=false;
+const defaultScrollingMessages=['Welcome to James R – Assistant Manager – Project Task Manager','Please update your daily activities and task status regularly','Check Pending Work and Work Inbox for newly assigned activities','Use Reports and Backup / Restore options regularly','Productivity Today Brings a Better Tomorrow'];
+function loadScrollingMessages(){try{const a=JSON.parse(localStorage.getItem(SCROLL_MSG_KEY)||'null');scrollingMessages=Array.isArray(a)&&a.length?a.filter(x=>String(x).trim()):defaultScrollingMessages.slice();}catch(e){scrollingMessages=defaultScrollingMessages.slice();}}
+function saveScrollingMessages(){localStorage.setItem(SCROLL_MSG_KEY,JSON.stringify(scrollingMessages));}
+function renderScrollingMessages(){const track=document.getElementById('infoTickerTrack');if(!track)return;if(!scrollingMessages.length){track.innerHTML='<span class="infoTickerItem">🔔 No scrolling messages configured</span>';return;}const one=scrollingMessages.map(function(x){const v=(typeof esc==='function')?esc(x):String(x);return '<span class="infoTickerItem">🔔 '+v+'</span>';}).join('');track.innerHTML=one+one;track.classList.toggle('paused',scrollingPaused);}
+function initScrollingMessages(){loadScrollingMessages();renderScrollingMessages();document.getElementById('infoTicker')?.classList.remove('hidden');}
+function toggleScrollingMessages(){scrollingPaused=!scrollingPaused;const t=document.getElementById('infoTickerTrack'),b=document.getElementById('tickerPauseBtn');t?.classList.toggle('paused',scrollingPaused);if(b)b.textContent=scrollingPaused?'▶':'Ⅱ';}
+function openScrollingManager(){if(!scrollingMessages.length)loadScrollingMessages();scrollingSelected=-1;renderScrollingManager();clearScrollingMessageInput();document.getElementById('scrollModalBackdrop')?.classList.add('show');}
+function closeScrollingManager(){document.getElementById('scrollModalBackdrop')?.classList.remove('show');}
+function renderScrollingManager(){const box=document.getElementById('scrollMessageList');if(!box)return;if(!scrollingMessages.length){box.innerHTML='<div class="msg">No messages. Click Add Message.</div>';return;}box.innerHTML=scrollingMessages.map(function(m,i){const val=(typeof esc==='function')?esc(m):String(m).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');return '<div class="scrollMsgRow"><input type="radio" name="scrollMsgSel" '+(i===scrollingSelected?'checked':'')+' onchange="selectScrollingMessage('+i+')"><input type="text" value="'+val+'" readonly title="Select this message"><button type="button" onclick="selectScrollingMessage('+i+');editScrollingMessage()">✏️ Edit</button></div>';}).join('');}
+function selectScrollingMessage(i){scrollingSelected=i;const inp=document.getElementById('scrollMessageInput');if(inp)inp.value=scrollingMessages[i]||'';renderScrollingManager();}
+function editScrollingMessage(){if(scrollingSelected<0)return;document.getElementById('scrollMessageInput')?.focus();}
+function addScrollingMessage(){scrollingSelected=-1;clearScrollingMessageInput();document.getElementById('scrollMessageInput')?.focus();}
+function saveScrollingMessage(){const inp=document.getElementById('scrollMessageInput'),v=String(inp?.value||'').trim();if(!v){alert('Enter a scrolling message.');return;}if(scrollingSelected>=0&&scrollingSelected<scrollingMessages.length)scrollingMessages[scrollingSelected]=v;else{scrollingMessages.push(v);scrollingSelected=scrollingMessages.length-1;}saveScrollingMessages();renderScrollingMessages();renderScrollingManager();}
+function clearScrollingMessageInput(){const inp=document.getElementById('scrollMessageInput');if(inp)inp.value='';scrollingSelected=-1;}
+function deleteSelectedScrollingMessage(){if(scrollingSelected<0||scrollingSelected>=scrollingMessages.length){alert('Select a message first.');return;}if(!confirm('Delete the selected scrolling message?'))return;scrollingMessages.splice(scrollingSelected,1);scrollingSelected=-1;saveScrollingMessages();renderScrollingMessages();renderScrollingManager();clearScrollingMessageInput();}
+function moveScrollingMessage(dir){if(scrollingSelected<0||scrollingSelected>=scrollingMessages.length){alert('Select a message first.');return;}const ni=scrollingSelected+dir;if(ni<0||ni>=scrollingMessages.length)return;const tmp=scrollingMessages[scrollingSelected];scrollingMessages[scrollingSelected]=scrollingMessages[ni];scrollingMessages[ni]=tmp;scrollingSelected=ni;saveScrollingMessages();renderScrollingMessages();renderScrollingManager();}
+setTimeout(initScrollingMessages,300);
 </script>
 </body>
 </html>
