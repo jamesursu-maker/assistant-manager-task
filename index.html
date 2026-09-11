@@ -159,6 +159,22 @@ main{padding-left:318px;}
 .reminder-overdue{border-left:5px solid #dc2626!important}.reminder-today{border-left:5px solid #f59e0b!important}.reminder-done{opacity:.65}
 @media(max-width:900px){.phase2-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.phase2-grid{grid-template-columns:1fr}}
 </style>
+<style id="completed-work-history-v1">
+.completed-history-modal{position:fixed;inset:0;background:rgba(15,23,42,.52);z-index:10050;display:flex;align-items:center;justify-content:center;padding:16px}
+.completed-history-card{width:min(980px,96vw);max-height:92vh;overflow:auto;background:#fff;border:1px solid #cbd5e1;border-radius:14px;box-shadow:0 24px 70px rgba(15,23,42,.35);position:relative}
+.completed-history-head{background:#17365d;color:#fff;padding:15px 50px 15px 18px;border-bottom:3px solid #f2c300;position:sticky;top:0;z-index:2}
+.completed-history-head h2{margin:0;font-size:21px}
+.completed-history-close{position:absolute;right:12px;top:10px;width:36px;height:36px;border:0;border-radius:8px;background:#fff;color:#17365d;font-size:24px;cursor:pointer}
+.completed-history-body{padding:16px}
+.history-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.history-stat{padding:12px;border:1px solid #dbe3ec;border-radius:10px;background:#f8fafc;text-align:center}
+.history-stat b{display:block;font-size:20px;color:#17365d}
+.history-table{width:100%;border-collapse:collapse}
+.history-table th,.history-table td{padding:9px 10px;border:1px solid #dbe3ec;text-align:left;vertical-align:top}
+.history-table th{background:#eef4fa;color:#17365d}
+.history-total{margin-top:12px;padding:11px 13px;border-left:4px solid #f2c300;background:#fff8dc;font-weight:700}
+@media(max-width:650px){.completed-history-modal{padding:6px;align-items:flex-start}.completed-history-card{width:100%;max-height:96vh;margin-top:6px}.history-summary{grid-template-columns:repeat(2,1fr)}.history-table{font-size:12px}.history-table th,.history-table td{padding:7px 6px}}
+</style>
 <style id="phase3-v15">
 .phase3-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .p3-card{border:1px solid #e2e8f0;border-radius:12px;padding:14px;background:#fff}
@@ -512,7 +528,7 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 <div><label>Plan Activity</label><input id="planned" placeholder="What is planned for today?"></div>
 <div><label>Actual Activity</label><input id="actual" placeholder="What was actually done today?"></div>
 <div><label>Start Time (Today)</label><input type="time" id="start"></div><div><label>End Time (Today)</label><input type="time" id="end"></div>
-<div><label>Status</label><select id="status"><option>In Progress</option><option>Completed</option><option>Pending</option></select></div>
+<div><label>Status</label><select id="status"><option>In Progress</option><option>Pending</option></select></div>
 <div><label>Site Visit / Travel</label><select id="travel"><option>No</option><option>Yes</option></select></div>
 <div><label>Location</label><input id="location"></div><div><label>Next Action</label><input id="next"></div>
 </div>
@@ -537,7 +553,7 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 <div><label>Revision No.</label><input id="cRevisionNo" readonly></div>
 <div><label>Revision Type</label><input id="cRevisionType" readonly></div>
 <div><label>Work Category</label><input id="cCategory" readonly></div>
-<div><label>Today Start Time</label><input type="time" id="cStart" readonly></div>
+<div><label>Final Day Start Time</label><input type="time" id="cStart"></div>
 <div><label>Today End Time</label><input type="time" id="cEnd"></div>
 <div><label>Site Visit / Travel</label><select id="cTravel"><option>No</option><option>Yes</option></select></div>
 <div><label>Location</label><input id="cLocation"></div>
@@ -1269,7 +1285,8 @@ $('taskForm').onsubmit=async e=>{
     plan_activity:$('planned').value,actual_activity:$('actual').value,
     start_time:existing ? (existing.start_time||null) : startTime,
     end_time:existing ? (existing.end_time||null) : endTime,
-    status:$('status').value,
+    // Daily Activity never completes an active work. Completion is done only in Completed Task Form.
+    status:(existing && String(existing.status||'').toLowerCase()==='completed') ? 'Completed' : ($('status').value==='Pending' ? 'Pending' : 'In Progress'),
     travel:$('travel').value==='Yes',location:$('location').value,
     next_action:$('next').value,remarks:$('remarks').value,
     updated_at:new Date().toISOString(),
@@ -1280,8 +1297,8 @@ $('taskForm').onsubmit=async e=>{
   // IMPORTANT: while updating an existing My Work item, keep its original first/start date.
   // The selected date is used only for the new daily time-history row.
   if(!id)data.start_date=workDate;
-  if($('status').value==='Completed')data.completed_at=new Date().toISOString();
-  if(id)data.workflow_status=(existing&&existing.status==='Completed'&&$('status').value==='Completed')?'Completed':'Working';
+  // Daily Activity does not set completion. Completed Task Form owns the final completion timestamp.
+  if(id)data.workflow_status=(existing&&existing.status==='Completed')?'Completed':'Working';
 
   const r=id
     ? await sb.from('tasks').update(data).eq('id',id)
@@ -1348,7 +1365,7 @@ function clearForm(){
   $('formTitle').textContent='New Daily Activity';$('cancelEdit').classList.add('hidden');$('revisionNo').value='0';
   if($('completedEditMeta'))$('completedEditMeta').classList.add('hidden');
   if($('unit'))$('unit').value=''; if($('project'))$('project').value=''; if($('category'))$('category').value='';
-  if($('revisionNo'))$('revisionNo').value='0'; if($('revisionType'))$('revisionType').value='Original Work';
+  if($('revisionNo'))$('revisionNo').value='0'; if($('revisionType'))$('revisionType').value='Original Work'; if($('status')){const co=$('status').querySelector('option[value=\"Completed\"]');if(co)co.remove();$('status').value='In Progress';}
   populateRelatedWork();
 }
 function cancelEdit(){clearForm()}
@@ -1491,7 +1508,7 @@ function loadCompletedWork(){
   const t=tasks.find(x=>x.id===$('cWorkSelect').value);
   if(!t){['cUnit','cProject','cRevisionNo','cRevisionType','cCategory','cStart','cPlanned'].forEach(id=>$(id).value='');return}
   $('cDate').value=today;$('cUnit').value=t.unit||'';$('cProject').value=t.project||'';$('cRevisionNo').value=t.revision_no??0;
-  $('cRevisionType').value=t.revision_type||'Original Work';$('cCategory').value=t.category||'';$('cStart').value=t.start_time||'';$('cPlanned').value=t.plan_activity||'';
+  $('cRevisionType').value=t.revision_type||'Original Work';$('cCategory').value=t.category||'';const todayTime=getLocalTimeHistory(t.id).find(x=>x.work_date===today);$('cStart').value=todayTime?.start_time||'';$('cPlanned').value=t.plan_activity||'';
   $('cTravel').value=t.travel?'Yes':'No';$('cLocation').value=t.location||'';$('cActual').value=t.actual_activity||'';$('cRevisionReason').value=t.revision_reason||'';
   $('cNext').value=t.next_action||'';$('cRemarks').value=t.remarks||'';$('cEnd').value=t.end_time||'';
 }
@@ -1505,7 +1522,6 @@ $('completedTaskForm').onsubmit=async e=>{
   if(!t){msg('completedFormMsg','Please select a work from My Work List.','error');return}
   const now=new Date().toISOString();
   const data={
-    start_date:$('cDate').value,
     actual_activity:$('cActual').value,
     end_time:$('cEnd').value||null,
     travel:$('cTravel').value==='Yes',location:$('cLocation').value,
@@ -1515,6 +1531,12 @@ $('completedTaskForm').onsubmit=async e=>{
   };
   const r=await sb.from('tasks').update(data).eq('id',id);
   if(r.error){msg('completedFormMsg',r.error.message,'error');return}
+  // The final completion day is also part of the work-time history.
+  const finalDate=$('cDate').value||today, finalStart=$('cStart').value||null, finalEnd=$('cEnd').value||null;
+  if(finalStart||finalEnd){
+    saveLocalTimeEntry(id,finalDate,finalStart,finalEnd);
+    try{await sb.from('work_time_logs').upsert({task_id:id,work_date:finalDate,start_time:finalStart,end_time:finalEnd,created_by:user.id,updated_at:now},{onConflict:'task_id,work_date'});}catch(_){}
+  }
   msg('completedFormMsg','Work completed successfully and added to Completed Task List.','ok');
   clearCompletedForm();await loadTasks();populateCompletedMyWork();renderCompletedTasks();renderDashboard();renderMyWork();renderInbox();renderTasks();
 };
@@ -1529,8 +1551,50 @@ function completedTaskHTML(t){
   ${t.start_time||''}${t.end_time?' → '+t.end_time:''}${t.location?' • '+esc(t.location):''}<br>
   Remarks: ${esc(t.remarks||'-')}
   ${t.revision_reason?'<br>Revision Reason: '+esc(t.revision_reason):''}</div>
-  <div class="actions"><button class="secondary smallbtn" onclick="reworkCompletedTask('${esc(t.id)}')">🔄 Rework</button><button class="secondary smallbtn" onclick="viewEditCompletedTask('${esc(t.id)}')">✏️ View / Edit</button></div><div id="givenby-edit-${esc(t.id)}"></div></div>`;
+  <div class="actions"><button class="primary smallbtn" onclick="viewCompletedWorkHistory('${esc(t.id)}')">📋 Work History</button><button class="secondary smallbtn" onclick="reworkCompletedTask('${esc(t.id)}')">🔄 Rework</button><button class="secondary smallbtn" onclick="viewEditCompletedTask('${esc(t.id)}')">✏️ View / Edit</button></div><div id="givenby-edit-${esc(t.id)}"></div></div>`;
 }
+async function viewCompletedWorkHistory(id){
+  const t=tasks.find(x=>String(x.id)===String(id));
+  if(!t)return;
+  seedLegacyTaskTime(t);
+  const byDate={};
+  try{
+    const r=await sb.from('work_time_logs').select('*').eq('task_id',id).order('work_date',{ascending:true});
+    if(!r.error)(r.data||[]).forEach(x=>{byDate[x.work_date]=x});
+  }catch(_){ }
+  getLocalTimeHistory(id).forEach(x=>{if(!byDate[x.work_date])byDate[x.work_date]=x});
+  if(t.start_date&&(t.start_time||t.end_time)&&!byDate[t.start_date])byDate[t.start_date]={work_date:t.start_date,start_time:t.start_time||null,end_time:t.end_time||null};
+  const rows=Object.values(byDate).filter(x=>x.work_date).sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date)));
+  const minutes=rows.reduce((sum,x)=>sum+minutesBetween(x.start_time,x.end_time),0);
+  const validDays=rows.filter(x=>x.start_time&&x.end_time).length;
+  const firstDate=rows[0]?.work_date||t.start_date||'';
+  const completedDate=t.completed_at?t.completed_at.slice(0,10):(t.completed_date||'');
+  const modal=document.createElement('div');
+  modal.className='completed-history-modal';
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove()});
+  const escH=esc;
+  const duration=(a,b)=>{
+    if(!a||!b)return '-';
+    const [sh,sm]=String(a).slice(0,5).split(':').map(Number),[eh,em]=String(b).slice(0,5).split(':').map(Number);
+    let m=(eh*60+em)-(sh*60+sm);if(m<0)m+=1440;return `${Math.floor(m/60)}h ${m%60}m`;
+  };
+  modal.innerHTML=`<div class="completed-history-card">
+    <div class="completed-history-head"><h2>📋 Work History – ${escH(t.project||'-')}</h2><button class="completed-history-close" type="button">×</button></div>
+    <div class="completed-history-body">
+      <div class="meta"><b>${escH(t.unit||'-')}</b> • Given By: ${escH(t.assigned_by||t.given_by||'-')} • Revision: ${escH(t.revision_no??0)}<br>First Work Date: ${escH(reportDate(firstDate))} • Completed Date: ${escH(reportDate(completedDate||t.completed_at||''))}</div>
+      <div class="history-summary" style="margin-top:12px">
+        <div class="history-stat"><b>${validDays}</b>Working Days</div>
+        <div class="history-stat"><b>${formatMinutes(minutes)}</b>Total Hours</div>
+        <div class="history-stat"><b>${escH(reportDate(firstDate))}</b>First Date</div>
+        <div class="history-stat"><b>${escH(reportDate(completedDate||t.completed_at||''))}</b>Completed</div>
+      </div>
+      <table class="history-table"><thead><tr><th>Date</th><th>From</th><th>To</th><th>Hours</th></tr></thead><tbody>${rows.length?rows.map(x=>`<tr><td>${escH(reportDate(x.work_date||''))}</td><td>${escH(String(x.start_time||'-').slice(0,5))}</td><td>${escH(String(x.end_time||'-').slice(0,5))}</td><td><b>${escH(duration(x.start_time,x.end_time))}</b></td></tr>`).join(''):'<tr><td colspan="4">No daily working-time entries recorded.</td></tr>'}</tbody></table>
+      <div class="history-total">Total time spent on this work: ${formatMinutes(minutes)} across ${validDays} working day(s).</div>
+    </div></div>`;
+  modal.querySelector('.completed-history-close').onclick=()=>modal.remove();
+  document.body.appendChild(modal);
+}
+window.viewCompletedWorkHistory=viewCompletedWorkHistory;
 async function viewEditCompletedTask(id){
   const t=tasks.find(x=>x.id===id);
   if(!t)return;
@@ -1562,6 +1626,7 @@ async function viewEditCompletedTask(id){
   $('planned').value=t.plan_activity||'';
   $('actual').value=t.actual_activity||'';
   $('start').value='';$('end').value='';
+  if(t.status==='Completed' && !$('status').querySelector('option[value=\"Completed\"]')){ const o=document.createElement('option');o.value='Completed';o.textContent='Completed';$('status').appendChild(o); }
   $('status').value=t.status||'Completed';
   $('travel').value=t.travel?'Yes':'No';$('location').value=t.location||'';$('next').value=t.next_action||'';
   $('revisionNo').value=t.revision_no??0;$('revisionType').value=t.revision_type||'Original Work';
