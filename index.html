@@ -174,6 +174,7 @@ main{padding-left:318px;}
 .history-table th{background:#eef4fa;color:#17365d}
 .history-total{margin-top:12px;padding:11px 13px;border-left:4px solid #f2c300;background:#fff8dc;font-weight:700}
 @media(max-width:650px){.completed-history-modal{padding:6px;align-items:flex-start}.completed-history-card{width:100%;max-height:96vh;margin-top:6px}.history-summary{grid-template-columns:repeat(2,1fr)}.history-table{font-size:12px}.history-table th,.history-table td{padding:7px 6px}}
+@media(max-width:650px){.completed-history-card{max-width:calc(100vw - 12px);overflow-x:hidden}.completed-history-body{padding:12px}.history-summary{gap:8px}.history-stat{min-width:0;padding:10px 6px}.history-stat b{font-size:18px;word-break:break-word}.history-table{width:100%;table-layout:fixed}.history-table th,.history-table td{word-break:break-word;white-space:normal}.history-table th:nth-child(1),.history-table td:nth-child(1){width:31%}.history-table th:nth-child(2),.history-table td:nth-child(2),.history-table th:nth-child(3),.history-table td:nth-child(3){width:20%}.history-table th:nth-child(4),.history-table td:nth-child(4){width:29%}.history-total{font-size:14px;line-height:1.4}}
 </style>
 <style id="phase3-v15">
 .phase3-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
@@ -843,7 +844,12 @@ async function init(){
   $('sbUrl').value=c.url;$('sbKey').value=c.key;
   try{
     if(!window.supabase)throw new Error('Supabase library not loaded.');
-    sb=window.supabase.createClient(c.url,c.key);
+    sb=window.supabase.createClient(c.url,c.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.localStorage}});
+    sb.auth.onAuthStateChange((event,session)=>{
+      user=session?.user||null;
+      const ub=$('userbar'); if(ub) ub.textContent=user?('Signed in: '+user.email):'Not logged in';
+      if(event==='SIGNED_IN' || event==='TOKEN_REFRESHED'){ if(user) setTimeout(()=>loadAll(),0); }
+    });
     const r=await sb.auth.getSession();
     if(r.error)throw r.error;
     user=r.data.session?.user||null;
@@ -1558,10 +1564,18 @@ async function viewCompletedWorkHistory(id){
   if(!t)return;
   seedLegacyTaskTime(t);
   const byDate={};
-  try{
-    const r=await sb.from('work_time_logs').select('*').eq('task_id',id).order('work_date',{ascending:true});
-    if(!r.error)(r.data||[]).forEach(x=>{byDate[x.work_date]=x});
-  }catch(_){ }
+  // Mobile/PWA can finish restoring the Supabase session a moment after the page loads.
+  // Retry the cloud history so the mobile view receives the same day-by-day entries as desktop.
+  for(let attempt=0; attempt<3; attempt++){
+    try{
+      if(!user && sb?.auth){ const sr=await sb.auth.getSession(); user=sr.data?.session?.user||null; }
+      if(user){
+        const r=await sb.from('work_time_logs').select('*').eq('task_id',id).order('work_date',{ascending:true});
+        if(!r.error){ (r.data||[]).forEach(x=>{if(x.work_date)byDate[x.work_date]=x}); if((r.data||[]).length) break; }
+      }
+    }catch(_){ }
+    if(attempt<2) await new Promise(resolve=>setTimeout(resolve,500*(attempt+1)));
+  }
   getLocalTimeHistory(id).forEach(x=>{if(!byDate[x.work_date])byDate[x.work_date]=x});
   if(t.start_date&&(t.start_time||t.end_time)&&!byDate[t.start_date])byDate[t.start_date]={work_date:t.start_date,start_time:t.start_time||null,end_time:t.end_time||null};
   const rows=Object.values(byDate).filter(x=>x.work_date).sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date)));

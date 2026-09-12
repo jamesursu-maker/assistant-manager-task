@@ -1,4 +1,4 @@
-const CACHE_NAME = 'assistant-manager-task-manager-final-pwa-v3-workhistory';
+const CACHE_NAME = 'assistant-manager-task-manager-final-pwa-v4-workhistory-mobile-sync';
 const APP_SHELL = [
   './',
   './index.html',
