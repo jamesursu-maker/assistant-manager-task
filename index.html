@@ -174,7 +174,6 @@ main{padding-left:318px;}
 .history-table th{background:#eef4fa;color:#17365d}
 .history-total{margin-top:12px;padding:11px 13px;border-left:4px solid #f2c300;background:#fff8dc;font-weight:700}
 @media(max-width:650px){.completed-history-modal{padding:6px;align-items:flex-start}.completed-history-card{width:100%;max-height:96vh;margin-top:6px}.history-summary{grid-template-columns:repeat(2,1fr)}.history-table{font-size:12px}.history-table th,.history-table td{padding:7px 6px}}
-@media(max-width:650px){.completed-history-card{max-width:calc(100vw - 12px);overflow-x:hidden}.completed-history-body{padding:12px}.history-summary{gap:8px}.history-stat{min-width:0;padding:10px 6px}.history-stat b{font-size:18px;word-break:break-word}.history-table{width:100%;table-layout:fixed}.history-table th,.history-table td{word-break:break-word;white-space:normal}.history-table th:nth-child(1),.history-table td:nth-child(1){width:31%}.history-table th:nth-child(2),.history-table td:nth-child(2),.history-table th:nth-child(3),.history-table td:nth-child(3){width:20%}.history-table th:nth-child(4),.history-table td:nth-child(4){width:29%}.history-total{font-size:14px;line-height:1.4}}
 </style>
 <style id="phase3-v15">
 .phase3-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
@@ -795,6 +794,8 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 
 <script>
 let sb=null,user=null,tasks=[],reminders=[],leaves=[];
+// Cloud daily work-time cache used so task cards show the same From/To time as Work History.
+let timeLogCache={};
 const SUBCAT_STORAGE_KEY='completed_work_subcategories_v1';
 function getSubcatMap(){try{return JSON.parse(localStorage.getItem(SUBCAT_STORAGE_KEY)||'{}')}catch(e){return {}}}
 function setSubcatLocal(id,value){const m=getSubcatMap();m[String(id)]=String(value||'');localStorage.setItem(SUBCAT_STORAGE_KEY,JSON.stringify(m));}
@@ -844,12 +845,7 @@ async function init(){
   $('sbUrl').value=c.url;$('sbKey').value=c.key;
   try{
     if(!window.supabase)throw new Error('Supabase library not loaded.');
-    sb=window.supabase.createClient(c.url,c.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.localStorage}});
-    sb.auth.onAuthStateChange((event,session)=>{
-      user=session?.user||null;
-      const ub=$('userbar'); if(ub) ub.textContent=user?('Signed in: '+user.email):'Not logged in';
-      if(event==='SIGNED_IN' || event==='TOKEN_REFRESHED'){ if(user) setTimeout(()=>loadAll(),0); }
-    });
+    sb=window.supabase.createClient(c.url,c.key);
     const r=await sb.auth.getSession();
     if(r.error)throw r.error;
     user=r.data.session?.user||null;
@@ -929,10 +925,46 @@ function showTab(id,btn){
   if(id==='plus'){plusInit();}
 }
 async function loadAll(){await loadTasks();await loadReminders();await loadLeaves();if(window.loadUnitVisitsCloud)await window.loadUnitVisitsCloud();populateRelatedWork();renderDashboard();renderInbox();renderMyWork();renderReminders();renderLeaves();renderUnitVisits();populateCompletedMyWork();renderCompletedTasks();if(typeof plusRenderPersonMaster==='function')plusRenderPersonMaster();if(typeof plusRenderGivenBy==='function')plusRenderGivenBy()}
+async function refreshTimeLogCache(){
+  timeLogCache={};
+  try{
+    if(!sb||!tasks.length)return;
+    const ids=tasks.map(t=>t.id).filter(Boolean);
+    if(!ids.length)return;
+    const r=await sb.from('work_time_logs').select('task_id,work_date,start_time,end_time').in('task_id',ids);
+    if(r.error)return;
+    (r.data||[]).forEach(x=>{
+      if(!timeLogCache[x.task_id])timeLogCache[x.task_id]=[];
+      timeLogCache[x.task_id].push(x);
+    });
+    Object.keys(timeLogCache).forEach(id=>timeLogCache[id].sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date))));
+  }catch(_){ }
+}
+function getTaskTimeEntries(t){
+  const cloud=Array.isArray(timeLogCache[String(t?.id)])?timeLogCache[String(t.id)]:[];
+  const local=getLocalTimeHistory(t?.id);
+  const byDate={};
+  cloud.forEach(x=>{if(x.work_date)byDate[x.work_date]=x});
+  local.forEach(x=>{if(x.work_date&&!byDate[x.work_date])byDate[x.work_date]=x});
+  if(t?.start_date&&(t.start_time||t.end_time)&&!byDate[t.start_date])byDate[t.start_date]={work_date:t.start_date,start_time:t.start_time||null,end_time:t.end_time||null};
+  return Object.values(byDate).filter(x=>x.work_date).sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date)));
+}
+function taskDisplayTime(t){
+  const rows=getTaskTimeEntries(t);
+  if(!rows.length)return '';
+  const completedDate=String(t?.completed_at||'').slice(0,10);
+  const row=rows.find(x=>String(x.work_date)===completedDate)||rows[rows.length-1];
+  if(!row)return '';
+  const st=row.start_time?String(row.start_time).slice(0,5):'';
+  const en=row.end_time?String(row.end_time).slice(0,5):'';
+  if(!st&&!en)return '';
+  return `${st}${en?' → '+en:''}`;
+}
 async function loadTasks(){
   const r=await sb.from('tasks').select('*').order('start_date',{ascending:false}).order('created_at',{ascending:false});
   if(r.error){msg('setupMsg','Database error: '+r.error.message,'error');return}
   tasks=r.data||[];
+  await refreshTimeLogCache();
 }
 async function loadReminders(){
   const r=await sb.from('work_reminders').select('*').order('reminder_date',{ascending:true}).order('reminder_time',{ascending:true});
@@ -959,7 +991,7 @@ function taskHTML(t){
   ${t.travel?' • 🚗 Travel/Site Visit':''}
   ${t.revision_type&&t.revision_type!=='Original Work'?' • '+esc(t.revision_type):''}<br>
   Category: ${esc(t.category)}<br>Plan: ${esc(t.plan_activity||'-')}<br>Actual: ${esc(t.actual_activity||'-')}<br>
-  ${t.start_time||''}${t.end_time?' → '+t.end_time:''}${t.location?' • '+esc(t.location):''}<br>
+  ${esc(taskDisplayTime(t))}${t.location?' • '+esc(t.location):''}<br>
   Next: ${esc(t.next_action||'-')}<br>Remarks: ${esc(t.remarks||'-')}
   ${t.revision_reason?'<br>Revision Reason: '+esc(t.revision_reason):''}</div>
   <div class="actions"><button class="primary smallbtn" onclick="editTask('${t.id}')">✏️ Edit / Update</button>
@@ -1554,7 +1586,7 @@ function completedTaskHTML(t){
   Given By: ${esc(t.assigned_by||t.given_by||'-')} • Priority: ${esc(t.priority||'-')}<br>
   Category: ${esc(t.category||'-')} • Sub Category: <b>${esc(subLabel)}</b> • Revision: ${esc(t.revision_type||'Original Work')}<br>
   Plan: ${esc(t.plan_activity||'-')}<br>Actual: ${esc(t.actual_activity||'-')}<br>
-  ${t.start_time||''}${t.end_time?' → '+t.end_time:''}${t.location?' • '+esc(t.location):''}<br>
+  ${esc(taskDisplayTime(t))}${t.location?' • '+esc(t.location):''}<br>
   Remarks: ${esc(t.remarks||'-')}
   ${t.revision_reason?'<br>Revision Reason: '+esc(t.revision_reason):''}</div>
   <div class="actions"><button class="primary smallbtn" onclick="viewCompletedWorkHistory('${esc(t.id)}')">📋 Work History</button><button class="secondary smallbtn" onclick="reworkCompletedTask('${esc(t.id)}')">🔄 Rework</button><button class="secondary smallbtn" onclick="viewEditCompletedTask('${esc(t.id)}')">✏️ View / Edit</button></div><div id="givenby-edit-${esc(t.id)}"></div></div>`;
@@ -1564,18 +1596,10 @@ async function viewCompletedWorkHistory(id){
   if(!t)return;
   seedLegacyTaskTime(t);
   const byDate={};
-  // Mobile/PWA can finish restoring the Supabase session a moment after the page loads.
-  // Retry the cloud history so the mobile view receives the same day-by-day entries as desktop.
-  for(let attempt=0; attempt<3; attempt++){
-    try{
-      if(!user && sb?.auth){ const sr=await sb.auth.getSession(); user=sr.data?.session?.user||null; }
-      if(user){
-        const r=await sb.from('work_time_logs').select('*').eq('task_id',id).order('work_date',{ascending:true});
-        if(!r.error){ (r.data||[]).forEach(x=>{if(x.work_date)byDate[x.work_date]=x}); if((r.data||[]).length) break; }
-      }
-    }catch(_){ }
-    if(attempt<2) await new Promise(resolve=>setTimeout(resolve,500*(attempt+1)));
-  }
+  try{
+    const r=await sb.from('work_time_logs').select('*').eq('task_id',id).order('work_date',{ascending:true});
+    if(!r.error)(r.data||[]).forEach(x=>{byDate[x.work_date]=x});
+  }catch(_){ }
   getLocalTimeHistory(id).forEach(x=>{if(!byDate[x.work_date])byDate[x.work_date]=x});
   if(t.start_date&&(t.start_time||t.end_time)&&!byDate[t.start_date])byDate[t.start_date]={work_date:t.start_date,start_time:t.start_time||null,end_time:t.end_time||null};
   const rows=Object.values(byDate).filter(x=>x.work_date).sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date)));
