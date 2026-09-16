@@ -796,6 +796,7 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 let sb=null,user=null,tasks=[],reminders=[],leaves=[];
 // Cloud daily work-time cache used so task cards show the same From/To time as Work History.
 let timeLogCache={};
+let timeLogCloudLoaded=false;
 const SUBCAT_STORAGE_KEY='completed_work_subcategories_v1';
 function getSubcatMap(){try{return JSON.parse(localStorage.getItem(SUBCAT_STORAGE_KEY)||'{}')}catch(e){return {}}}
 function setSubcatLocal(id,value){const m=getSubcatMap();m[String(id)]=String(value||'');localStorage.setItem(SUBCAT_STORAGE_KEY,JSON.stringify(m));}
@@ -964,23 +965,28 @@ async function loadAll(){
 }
 async function refreshTimeLogCache(){
   timeLogCache={};
+  timeLogCloudLoaded=false;
   if(!sb||!tasks.length)return;
-  await waitForAuthenticatedSession(3);
+  const session=await waitForAuthenticatedSession(5);
+  if(!session?.user)return;
   const ids=tasks.map(t=>t.id).filter(Boolean);
   if(!ids.length)return;
-  for(let attempt=0;attempt<3;attempt++){
+  for(let attempt=0;attempt<4;attempt++){
     try{
       const r=await sb.from('work_time_logs').select('task_id,work_date,start_time,end_time').in('task_id',ids).order('work_date',{ascending:true});
       if(!r.error){
+        // A successful cloud query is authoritative, including an empty result.
+        // Never mix stale device-local time rows into a successfully loaded cloud history.
         (r.data||[]).forEach(x=>{
           if(!timeLogCache[x.task_id])timeLogCache[x.task_id]=[];
           timeLogCache[x.task_id].push(x);
         });
         Object.keys(timeLogCache).forEach(id=>timeLogCache[id].sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date))));
+        timeLogCloudLoaded=true;
         return;
       }
     }catch(_){}
-    await new Promise(res=>setTimeout(res,500*(attempt+1)));
+    await new Promise(res=>setTimeout(res,600*(attempt+1)));
   }
 }
 async function mobileRefreshIfNeeded(){
@@ -993,11 +999,16 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 window.addEventListener('pageshow',()=>mobileRefreshIfNeeded());
 function getTaskTimeEntries(t){
   const cloud=Array.isArray(timeLogCache[String(t?.id)])?timeLogCache[String(t.id)]:[];
-  const local=getLocalTimeHistory(t?.id);
   const byDate={};
   cloud.forEach(x=>{if(x.work_date)byDate[x.work_date]=x});
-  local.forEach(x=>{if(x.work_date&&!byDate[x.work_date])byDate[x.work_date]=x});
-  if(t?.start_date&&(t.start_time||t.end_time)&&!byDate[t.start_date])byDate[t.start_date]={work_date:t.start_date,start_time:t.start_time||null,end_time:t.end_time||null};
+  // Only use device-local history when the cloud time-log query was not available.
+  // If Supabase returned successfully (even with zero rows), cloud is authoritative.
+  if(!timeLogCloudLoaded){
+    getLocalTimeHistory(t?.id).forEach(x=>{if(x.work_date&&!byDate[x.work_date])byDate[x.work_date]=x});
+  }
+  if(!timeLogCloudLoaded && t?.start_date&&(t.start_time||t.end_time)&&!byDate[t.start_date]){
+    byDate[t.start_date]={work_date:t.start_date,start_time:t.start_time||null,end_time:t.end_time||null};
+  }
   return Object.values(byDate).filter(x=>x.work_date).sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date)));
 }
 function taskDisplayTime(t){
@@ -1035,7 +1046,7 @@ function dueBadge(t){const x=dueState(t);return `<span class="dueBadge ${x.cls}"
 function taskSearchMatch(t,q){if(!q)return true;return [t.project,t.unit,t.category,t.assigned_by,t.status,t.plan_activity,t.actual_activity,t.work_details,t.location,t.next_action,t.remarks,t.due_date].filter(Boolean).join(' ').toLowerCase().includes(q.toLowerCase())}
 function minutesBetween(st,en){if(!st||!en)return 0;const a=String(st).slice(0,5).split(':').map(Number),b=String(en).slice(0,5).split(':').map(Number);let m=(b[0]*60+b[1])-(a[0]*60+a[1]);if(m<0)m+=1440;return m}
 function formatMinutes(m){return `${Math.floor(m/60)}h ${m%60}m`}
-function taskHours(t){let total=0;try{getLocalTimeHistory(t.id).forEach(x=>total+=minutesBetween(x.start_time,x.end_time))}catch(_){}if(!total&&t.start_time&&t.end_time)total=minutesBetween(t.start_time,t.end_time);return total}
+function taskHours(t){let total=0;try{getTaskTimeEntries(t).forEach(x=>total+=minutesBetween(x.start_time,x.end_time))}catch(_){}if(!total&&!timeLogCloudLoaded&&t.start_time&&t.end_time)total=minutesBetween(t.start_time,t.end_time);return total}
 function taskHTML(t){
   return `<div class="task"><h3>${esc(t.project)} ${revisionBadge(t.revision_no??0)} ${badge(t.status)} ${dueBadge(t)}</h3>
   <div class="meta"><b>${esc(t.unit)}</b> • ${esc(reportDate(t.start_date))}
@@ -1676,16 +1687,13 @@ async function viewCompletedWorkHistory(id){
     await new Promise(res=>setTimeout(res,400*(attempt+1)));
   }
 
-  // If cloud history is unavailable, retain the existing browser history as a fallback.
-  // When cloud history is available, it is authoritative and local rows never replace it.
+  // Cloud history is authoritative whenever the query succeeds.
+  // Device-local history is used only when the cloud query itself is unavailable.
   if(!cloudLoaded){
     getLocalTimeHistory(id).forEach(x=>{if(x.work_date)byDate[x.work_date]=x;});
-  }else{
-    // Preserve legacy Day-1 only if that date is absent from the cloud history.
-    getLocalTimeHistory(id).forEach(x=>{if(x.work_date&&!byDate[x.work_date])byDate[x.work_date]=x;});
-  }
-  if(t.start_date&&(t.start_time||t.end_time)&&!byDate[t.start_date]){
-    byDate[t.start_date]={work_date:t.start_date,start_time:t.start_time||null,end_time:t.end_time||null};
+    if(t.start_date&&(t.start_time||t.end_time)&&!byDate[t.start_date]){
+      byDate[t.start_date]={work_date:t.start_date,start_time:t.start_time||null,end_time:t.end_time||null};
+    }
   }
 
   const rows=Object.values(byDate).filter(x=>x.work_date).sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date)));
