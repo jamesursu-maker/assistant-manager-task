@@ -294,6 +294,7 @@ main>section .form-entry-card{display:none!important}
   .infoTickerLabel{font-size:11px!important;padding:0 8px!important;}
 }
 </style>
+<style id="dashboard-extras-v1">.smartDashHead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.smartDashHead h3{margin:0}.smartKpiGrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:10px}.smartKpi{padding:11px;border:1px solid #e1e7ee;border-radius:10px;background:#f8fafc;text-align:center}.smartKpi b{display:block;font-size:22px}.smartKpi span{font-size:11px;color:#64748b}.smartKpi.red{border-left:4px solid #dc2626}.smartKpi.orange{border-left:4px solid #f59e0b}.smartKpi.blue{border-left:4px solid #2563eb}.smartKpi.green{border-left:4px solid #16a34a}.smartKpi.purple{border-left:4px solid #7c3aed}.priorityGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}.priorityCard{padding:14px;border-radius:10px;border:1px solid #e2e8f0;background:#fff}.priorityCard b{font-size:25px;display:block}.priorityBar{height:8px;background:#edf2f7;border-radius:10px;overflow:hidden;margin-top:8px}.priorityBar i{display:block;height:100%}.priorityHigh i{background:#dc2626}.priorityMedium i{background:#f59e0b}.priorityLow i{background:#16a34a}.priorityOverdue i{background:#7f1d1d}.dashboardFeatureGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.smartList{margin-top:10px}.smartListItem{padding:9px 10px;border-bottom:1px solid #edf0f4;font-size:12px}.smartListItem:last-child{border-bottom:0}.trendChart{min-height:210px;padding:10px 8px;border-top:1px solid #edf0f4;overflow-x:auto}.trendBar{width:15px;min-height:2px;border-radius:4px 4px 0 0}.trendAssigned{background:#64748b}.trendCompleted{background:#16a34a}.trendRevision{background:#7c3aed}.trendMonthLabel{font-size:10px;color:#64748b}.trendLegend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:#64748b;margin-bottom:7px}.trendLegend span:before{content:'';display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}.lgAssigned:before{background:#64748b!important}.lgCompleted:before{background:#16a34a!important}.lgRevision:before{background:#7c3aed!important}.featureTable{width:100%;border-collapse:collapse;font-size:12px}.featureTable th,.featureTable td{padding:7px;border-bottom:1px solid #e7ebf0;text-align:left}.featureTable th{background:#f8fafc}.smartHolidayRow{display:grid;grid-template-columns:160px 1fr auto;gap:8px;margin-top:8px}.smartHolidayList{margin-top:8px}.holidayChip{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border-radius:14px;background:#fff1e6;color:#9a3412;margin:3px;font-size:11px}.calDay.holidayDay{background:#fff1e6!important;border-color:#fb923c!important;color:#9a3412!important;font-weight:bold}.calDay.completedCalDay{box-shadow:inset 0 -3px 0 #16a34a}.calDay.unitVisitDay{box-shadow:inset 0 -3px 0 #2563eb}@media(max-width:850px){.smartKpiGrid{grid-template-columns:repeat(2,1fr)}.priorityGrid{grid-template-columns:1fr 1fr}.dashboardFeatureGrid{grid-template-columns:1fr}.smartHolidayRow{grid-template-columns:1fr}}</style>
 </head>
 <body>
 <header class="appHeader">
@@ -405,6 +406,13 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 <div class="phase2-stat"><b id="anaRevisions">0</b><span>Revisions / Rework</span></div>
 <div class="phase2-stat"><b id="anaHours">0h</b><span>Logged Hours</span></div>
 </div></div><div class="alertGrid"><div class="alertCard overdue"><b id="dashOverdueCount">0</b><span>🔴 Overdue Work</span></div><div class="alertCard dueToday"><b id="dashDueTodayCount">0</b><span>🟠 Due Today</span></div><div class="alertCard upcoming"><b id="dashUpcomingCount">0</b><span>🟢 Upcoming</span></div></div>
+<div class="card smartDashCard"><div class="smartDashHead"><h3>🎯 Today Focus</h3><span class="small">Priority, due dates & follow-ups</span></div><div id="todayFocusGrid" class="smartKpiGrid"></div><div id="todayFocusList" class="smartList"></div></div>
+<div class="card smartDashCard"><div class="smartDashHead"><h3>🚦 Task Priority Dashboard</h3><span class="small">Active work by priority</span></div><div id="priorityDashboard" class="priorityGrid"></div></div>
+<div class="dashboardFeatureGrid"><div class="card smartDashCard"><h3>📅 Monthly Performance</h3><div class="toolbar"><input type="month" id="dashPerfMonth" onchange="renderDashboardExtras()"></div><div id="monthlyPerformance"></div></div><div class="card smartDashCard"><h3>🏢 Unit Wise Dashboard</h3><div id="unitWiseDashboard"></div></div></div>
+<div class="card smartDashCard"><div class="smartDashHead"><h3>📈 Task Trend – Last 6 Months</h3><span class="small">Assigned / Completed / Revision</span></div><div id="taskTrendChart" class="trendChart"></div></div>
+<div class="card smartDashCard"><div class="smartDashHead"><h3>🔄 Revision / Rework Tracking</h3><span class="small">Revision history summary</span></div><div id="revisionDashboard"></div></div>
+<div class="card smartDashCard"><div class="smartDashHead"><h3>📝 Remarks & Follow-up</h3><span class="small">Upcoming follow-ups and task remarks</span></div><div id="followupDashboard"></div></div>
+<div class="card smartDashCard"><div class="smartDashHead"><h3>🗓️ Smart Calendar Settings</h3><span class="small">Add holidays; Sunday remains Weekly Off</span></div><div class="smartHolidayRow"><input type="date" id="holidayDate"><input id="holidayName" placeholder="Holiday name"><button class="secondary" type="button" onclick="addSmartHoliday()">➕ Add Holiday</button></div><div id="holidayList" class="smartHolidayList"></div></div>
 <div class="card"><h3>Today Activity</h3></div>
 <div class="dashboardLists">
   <div class="card"><h3>📥 Work Inbox</h3><div id="dashInboxList"></div></div>
@@ -530,7 +538,7 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 <div><label>Start Time (Today)</label><input type="time" id="start"></div><div><label>End Time (Today)</label><input type="time" id="end"></div>
 <div><label>Status</label><select id="status"><option>In Progress</option><option>Pending</option></select></div>
 <div><label>Site Visit / Travel</label><select id="travel"><option>No</option><option>Yes</option></select></div>
-<div><label>Location</label><input id="location"></div><div><label>Next Action</label><input id="next"></div>
+<div><label>Location</label><input id="location"></div><div><label>Next Action</label><input id="next"></div><div><label>Follow-up Date</label><input type="date" id="followUpDate"></div><div><label>Follow-up Person</label><input id="followUpPerson" placeholder="Who to follow up with?"></div>
 </div>
 <div style="margin-top:10px"><label>Revision / Correction Reason</label><textarea id="revisionReason" placeholder="If this is a correction/revision, mention what changed."></textarea></div><div style="margin-top:10px"><label>Remarks</label><textarea id="remarks"></textarea></div>
 <div class="card" style="margin-top:12px;background:#f8fafc"><h3>🔄 Revision / Work Timeline</h3>
@@ -1043,10 +1051,13 @@ function revisionBadge(n){return '<span class="pill rev">Rev.'+esc(n??0)+'</span
 
 function dueState(t){const d=String(t?.due_date||'');if(!d)return {key:'No Due Date',label:'No Due Date',cls:'dueNone'};if(d<today)return {key:'Overdue',label:'OVERDUE • '+d,cls:'dueOverdue'};if(d===today)return {key:'Today',label:'DUE TODAY',cls:'dueTodayBadge'};return {key:'Upcoming',label:'Due • '+d,cls:'dueUpcoming'}}
 function dueBadge(t){const x=dueState(t);return `<span class="dueBadge ${x.cls}">${esc(x.label)}</span>`}
-function taskSearchMatch(t,q){if(!q)return true;return [t.project,t.unit,t.category,t.assigned_by,t.status,t.plan_activity,t.actual_activity,t.work_details,t.location,t.next_action,t.remarks,t.due_date].filter(Boolean).join(' ').toLowerCase().includes(q.toLowerCase())}
+function taskSearchMatch(t,q){if(!q)return true;return [t.project,t.unit,t.category,t.assigned_by,t.status,t.plan_activity,t.actual_activity,t.work_details,t.location,t.next_action,t.remarks,taskFollowup(t).date,taskFollowup(t).person,t.due_date].filter(Boolean).join(' ').toLowerCase().includes(q.toLowerCase())}
 function minutesBetween(st,en){if(!st||!en)return 0;const a=String(st).slice(0,5).split(':').map(Number),b=String(en).slice(0,5).split(':').map(Number);let m=(b[0]*60+b[1])-(a[0]*60+a[1]);if(m<0)m+=1440;return m}
 function formatMinutes(m){return `${Math.floor(m/60)}h ${m%60}m`}
 function taskHours(t){let total=0;try{getTaskTimeEntries(t).forEach(x=>total+=minutesBetween(x.start_time,x.end_time))}catch(_){}if(!total&&!timeLogCloudLoaded&&t.start_time&&t.end_time)total=minutesBetween(t.start_time,t.end_time);return total}
+function taskFollowupMap(){try{return JSON.parse(localStorage.getItem('assistant_manager_task_followups_v1')||'{}')}catch(_){return {}}}
+function taskFollowup(t){const m=taskFollowupMap();return m[t?.id]||{date:t?.follow_up_date||'',person:t?.follow_up_person||''}}
+function saveTaskFollowup(id,date,person){if(!id)return;const m=taskFollowupMap();if(date||person)m[id]={date:date||'',person:person||''};else delete m[id];localStorage.setItem('assistant_manager_task_followups_v1',JSON.stringify(m))}
 function taskHTML(t){
   return `<div class="task"><h3>${esc(t.project)} ${revisionBadge(t.revision_no??0)} ${badge(t.status)} ${dueBadge(t)}</h3>
   <div class="meta"><b>${esc(t.unit)}</b> • ${esc(reportDate(t.start_date))}
@@ -1054,7 +1065,7 @@ function taskHTML(t){
   ${t.revision_type&&t.revision_type!=='Original Work'?' • '+esc(t.revision_type):''}<br>
   Category: ${esc(t.category)}<br>Plan: ${esc(t.plan_activity||'-')}<br>Actual: ${esc(t.actual_activity||'-')}<br>
   ${esc(taskDisplayTime(t))}${t.location?' • '+esc(t.location):''}<br>
-  Next: ${esc(t.next_action||'-')}<br>Remarks: ${esc(t.remarks||'-')}
+  Next: ${esc(t.next_action||'-')}<br>Follow-up: ${esc(taskFollowup(t).date?reportDate(taskFollowup(t).date):'-')}${taskFollowup(t).person?' • '+esc(taskFollowup(t).person):''}<br>Remarks: ${esc(t.remarks||'-')}
   ${t.revision_reason?'<br>Revision Reason: '+esc(t.revision_reason):''}</div>
   <div class="actions"><button class="primary smallbtn" onclick="editTask('${t.id}')">✏️ Edit / Update</button>
   ${t.status==='Completed'?`<button class="secondary smallbtn" onclick="createRevision('${t.id}')">🔄 New Revision</button>`:''}
@@ -1107,8 +1118,17 @@ function renderDashboard(){
       ? '<div style="font-weight:700;margin-bottom:10px">📥 Inbox Work</div>'+pending.map(t=>{const ds=dueState(t); return `<div style="padding:9px 10px;margin:6px 0;border:1px solid #e2e8f0;border-radius:9px;background:#f8fafc"><b>${esc(t.project||'Untitled Work')}</b><span style="display:block;font-size:13px;margin-top:3px">Unit: ${esc(t.unit||'-')}</span>${t.due_date?`<span style="display:block;font-size:13px;margin-top:3px">Due Date: <b>${esc(reportDate(t.due_date))}</b> ${dueBadge(t)}</span>`:''}</div>`}).join('')
       : '<div style="margin-top:16px;color:#64748b">No Inbox Work</div>';
   }
-  renderCalendar();renderPhase2Analytics();
+  renderCalendar();renderPhase2Analytics();renderDashboardExtras();
 }
+
+function dashMonthValue(){return $('dashPerfMonth')?.value||today.slice(0,7)}
+function dashDateForTask(t){return calendarDateKey(t.start_date||t.received_date||t.completed_date||t.completed_at||'')}
+function renderDashboardExtras(){const active=tasks.filter(t=>String(t.status||'').toLowerCase()!=='completed'),over=active.filter(t=>dueState(t).key==='Overdue'),due=active.filter(t=>dueState(t).key==='Today'),up=active.filter(t=>dueState(t).key==='Upcoming'),follow=tasks.filter(t=>taskFollowup(t).date&&String(t.status||'').toLowerCase()!=='completed').sort((a,b)=>String(taskFollowup(a).date).localeCompare(String(taskFollowup(b).date)));const focus=$('todayFocusGrid');if(focus)focus.innerHTML=`<div class="smartKpi red"><b>${over.length}</b><span>Overdue</span></div><div class="smartKpi orange"><b>${due.length}</b><span>Due Today</span></div><div class="smartKpi green"><b>${up.length}</b><span>Upcoming</span></div><div class="smartKpi blue"><b>${follow.filter(t=>taskFollowup(t).date===today).length}</b><span>Follow-up Today</span></div><div class="smartKpi purple"><b>${active.filter(t=>String(t.priority||'Medium')==='High').length}</b><span>High Priority</span></div>`;const fl=$('todayFocusList');if(fl){const items=[...over.map(t=>({t,label:'OVERDUE'})),...due.map(t=>({t,label:'DUE TODAY'})),...follow.filter(t=>taskFollowup(t).date===today).map(t=>({t,label:'FOLLOW-UP TODAY'}))];fl.innerHTML=items.length?items.slice(0,10).map(x=>`<div class="smartListItem"><b>${esc(x.t.project||'-')}</b> — ${esc(x.label)}<br>${esc(x.t.unit||'-')} • ${esc(x.t.assigned_by||x.t.given_by||'-')}${taskFollowup(x.t).person?' • Follow-up: '+esc(taskFollowup(x.t).person):''}</div>`).join(''):'<div class="small">No urgent items for today.</div>'}const pg=$('priorityDashboard');if(pg){const vals=['High','Medium','Low'],counts=vals.map(p=>active.filter(t=>String(t.priority||'Medium')===p).length),mx=Math.max(1,...counts,over.length);pg.innerHTML=vals.map((p,i)=>`<div class="priorityCard priority${p}"><b>${counts[i]}</b><span>${p} Priority</span><div class="priorityBar"><i style="width:${Math.round(counts[i]*100/mx)}%"></i></div></div>`).join('')+`<div class="priorityCard priorityOverdue"><b>${over.length}</b><span>Overdue</span><div class="priorityBar"><i style="width:${Math.round(over.length*100/mx)}%"></i></div></div>`}renderMonthlyPerformance();renderUnitWiseDashboard();renderTaskTrend();renderRevisionDashboard();renderFollowupDashboard()}
+function renderMonthlyPerformance(){const box=$('monthlyPerformance');if(!box)return;const ym=dashMonthValue(),a=tasks.filter(t=>dashDateForTask(t).slice(0,7)===ym),assigned=a.length,done=a.filter(t=>String(t.status||'').toLowerCase()==='completed').length,active=a.filter(t=>String(t.status||'').toLowerCase()!=='completed').length,rev=a.filter(t=>Number(t.revision_no||0)>0||String(t.revision_type||'').toLowerCase()==='rework').length,over=a.filter(t=>String(t.status||'').toLowerCase()!=='completed'&&t.due_date&&t.due_date<today).length,h=a.reduce((n,t)=>n+taskHours(t),0);box.innerHTML=`<div class="smartKpiGrid" style="grid-template-columns:repeat(3,1fr)"><div class="smartKpi"><b>${assigned}</b><span>Works</span></div><div class="smartKpi green"><b>${done}</b><span>Completed</span></div><div class="smartKpi blue"><b>${active}</b><span>Active</span></div><div class="smartKpi purple"><b>${rev}</b><span>Revision / Rework</span></div><div class="smartKpi red"><b>${over}</b><span>Overdue</span></div><div class="smartKpi"><b>${formatMinutes(h)}</b><span>Logged Hours</span></div></div>`}
+function renderUnitWiseDashboard(){const box=$('unitWiseDashboard');if(!box)return;const units={};tasks.forEach(t=>{const u=String(t.unit||'Unassigned');if(!units[u])units[u]={total:0,done:0,active:0,over:0};units[u].total++;if(String(t.status||'').toLowerCase()==='completed')units[u].done++;else{units[u].active++;if(t.due_date&&t.due_date<today)units[u].over++}});const rows=Object.entries(units).sort((a,b)=>b[1].total-a[1].total).map(([u,v])=>`<tr><td>${esc(u)}</td><td>${v.total}</td><td>${v.done}</td><td>${v.active}</td><td>${v.over}</td></tr>`).join('');box.innerHTML=`<table class="featureTable"><thead><tr><th>Unit</th><th>Total</th><th>Completed</th><th>Active</th><th>Overdue</th></tr></thead><tbody>${rows||'<tr><td colspan="5">No work data.</td></tr>'}</tbody></table>`}
+function renderTaskTrend(){const box=$('taskTrendChart');if(!box)return;const months=[],base=new Date(today.slice(0,7)+'-01T00:00:00');for(let i=5;i>=0;i--){const d=new Date(base.getFullYear(),base.getMonth()-i,1);months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`)}const data=months.map(m=>{const a=tasks.filter(t=>dashDateForTask(t).slice(0,7)===m);return{m,assigned:a.length,done:a.filter(t=>String(t.status||'').toLowerCase()==='completed').length,rev:a.filter(t=>Number(t.revision_no||0)>0||String(t.revision_type||'').toLowerCase()==='rework').length}}),mx=Math.max(1,...data.flatMap(x=>[x.assigned,x.done,x.rev]));box.innerHTML='<div class="trendLegend"><span class="lgAssigned">Assigned</span><span class="lgCompleted">Completed</span><span class="lgRevision">Revision</span></div><div style="display:flex;align-items:flex-end;gap:10px;height:175px">'+data.map(x=>`<div class="trendMonth" style="min-width:70px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px"><div style="height:145px;display:flex;align-items:flex-end;gap:3px"><i class="trendBar trendAssigned" style="height:${Math.max(2,Math.round(x.assigned/mx*140))}px" title="Assigned: ${x.assigned}"></i><i class="trendBar trendCompleted" style="height:${Math.max(2,Math.round(x.done/mx*140))}px" title="Completed: ${x.done}"></i><i class="trendBar trendRevision" style="height:${Math.max(2,Math.round(x.rev/mx*140))}px" title="Revision: ${x.rev}"></i></div><div class="trendMonthLabel">${x.m.slice(5)}/${x.m.slice(2,4)}</div><div class="small">${x.assigned} / ${x.done}</div></div>`).join('')+'</div>'}
+function renderRevisionDashboard(){const box=$('revisionDashboard');if(!box)return;const a=tasks.filter(t=>Number(t.revision_no||0)>0||String(t.revision_type||'').toLowerCase()==='rework').sort((x,y)=>String(y.updated_at||y.start_date||'').localeCompare(String(x.updated_at||x.start_date||'')));const by={};a.forEach(t=>{const k=t.project||'Untitled';by[k]=(by[k]||0)+1});const rows=Object.entries(by).slice(0,10).map(([k,n])=>{const t=a.find(x=>(x.project||'Untitled')===k);return `<tr><td>${esc(k)}</td><td>${n}</td><td>Rev.${esc(t?.revision_no??0)}</td><td>${esc(reportDate(t?.start_date||''))}</td></tr>`}).join('');box.innerHTML=`<table class="featureTable"><thead><tr><th>Work</th><th>Revision Count</th><th>Latest Rev.</th><th>Latest Date</th></tr></thead><tbody>${rows||'<tr><td colspan="4">No revision / rework records.</td></tr>'}</tbody></table>`}
+function renderFollowupDashboard(){const box=$('followupDashboard');if(!box)return;const a=tasks.filter(t=>taskFollowup(t).date||t.next_action||t.remarks).sort((x,y)=>String(taskFollowup(x).date||'9999').localeCompare(String(taskFollowup(y).date||'9999'))).slice(0,10);box.innerHTML=a.length?a.map(t=>`<div class="smartListItem"><b>${esc(t.project||'-')}</b> ${badge(t.status||'-')}<br>${taskFollowup(t).date?'📅 '+esc(reportDate(taskFollowup(t).date))+' • ':''}${taskFollowup(t).person?'👤 '+esc(taskFollowup(t).person)+' • ':''}Next: ${esc(t.next_action||'-')}<br>Remarks: ${esc(t.remarks||'-')}</div>`).join(''):'<div class="small">No remarks / follow-up details recorded.</div>'}
 
 function refreshPickToHideSelect(){
   const s=$('pickToHideSelect');
@@ -1447,6 +1467,8 @@ $('taskForm').onsubmit=async e=>{
     }catch(_){}
   }
 
+  if(taskId)saveTaskFollowup(taskId,$('followUpDate')?.value||'',$('followUpPerson')?.value||'');
+
   msg('formMsg',id?'Activity updated successfully.':'Activity saved successfully.','ok');
   await loadTasks();renderDashboard();renderMyWork();renderInbox();
 
@@ -1461,7 +1483,7 @@ $('taskForm').onsubmit=async e=>{
 };
 
 function clearForm(){
-  $('taskForm').reset();$('editingId').value='';$('date').value=today;$('saveBtn').textContent='Save Activity';
+  $('taskForm').reset();$('editingId').value='';$('date').value=today;$('followUpDate').value='';$('followUpPerson').value='';$('saveBtn').textContent='Save Activity';
   $('formTitle').textContent='New Daily Activity';$('cancelEdit').classList.add('hidden');$('revisionNo').value='0';
   if($('completedEditMeta'))$('completedEditMeta').classList.add('hidden');
   if($('unit'))$('unit').value=''; if($('project'))$('project').value=''; if($('category'))$('category').value='';
@@ -1761,7 +1783,7 @@ async function viewEditCompletedTask(id){
   $('start').value='';$('end').value='';
   if(t.status==='Completed' && !$('status').querySelector('option[value=\"Completed\"]')){ const o=document.createElement('option');o.value='Completed';o.textContent='Completed';$('status').appendChild(o); }
   $('status').value=t.status||'Completed';
-  $('travel').value=t.travel?'Yes':'No';$('location').value=t.location||'';$('next').value=t.next_action||'';
+  $('travel').value=t.travel?'Yes':'No';$('location').value=t.location||'';$('next').value=t.next_action||'';$('followUpDate').value=taskFollowup(t).date||'';$('followUpPerson').value=taskFollowup(t).person||'';
   $('revisionNo').value=t.revision_no??0;$('revisionType').value=t.revision_type||'Original Work';
   $('revisionReason').value=t.revision_reason||'';$('remarks').value=t.remarks||'';
   $('saveBtn').textContent='Update Completed Work';$('formTitle').textContent='View / Edit Completed Work';
@@ -2132,51 +2154,24 @@ function calendarDateKey(v){
 function calendarWorkName(t){
   return 'Work';
 }
+function smartHolidays(){try{return JSON.parse(localStorage.getItem('assistant_manager_holidays_v1')||'[]')}catch(_){return []}}
+function setSmartHolidays(a){localStorage.setItem('assistant_manager_holidays_v1',JSON.stringify(a||[]))}
+function addSmartHoliday(){const d=$('holidayDate')?.value,n=($('holidayName')?.value||'Holiday').trim();if(!d){alert('Select a holiday date.');return}let a=smartHolidays();const i=a.findIndex(x=>x.date===d);if(i>=0)a[i]={date:d,name:n||'Holiday'};else a.push({date:d,name:n||'Holiday'});a.sort((x,y)=>x.date.localeCompare(y.date));setSmartHolidays(a);if($('holidayDate'))$('holidayDate').value='';if($('holidayName'))$('holidayName').value='';renderCalendar();renderHolidayList()}
+function deleteSmartHoliday(d){setSmartHolidays(smartHolidays().filter(x=>x.date!==d));renderCalendar();renderHolidayList()}
+function renderHolidayList(){const b=$('holidayList');if(!b)return;const p=`${calYear}-${String(calMonth+1).padStart(2,'0')}`;const a=smartHolidays().filter(x=>String(x.date).slice(0,7)===p);b.innerHTML=a.length?a.map(x=>`<span class="holidayChip">🟠 ${esc(reportDate(x.date))} – ${esc(x.name)} <button type="button" class="secondary smallbtn" onclick="deleteSmartHoliday('${esc(x.date)}')">×</button></span>`).join(''):'<span class="small">No custom holidays for this month.</span>'}
 function renderCalendar(){
-  const first=new Date(calYear,calMonth,1);
-  $('calMonthTitle').textContent=first.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
-  const monthPrefix=`${calYear}-${String(calMonth+1).padStart(2,'0')}-`;
-  const monthTasks=tasks.filter(t=>calendarDateKey(t.start_date||t.received_date||t.completed_date||t.completed_at) .startsWith(monthPrefix));
-  const workByDate={};
-  monthTasks.forEach(t=>{
-    const d=calendarDateKey(t.start_date||t.received_date||t.completed_date||t.completed_at);
-    if(!d)return;
-    (workByDate[d]||(workByDate[d]=[])).push(calendarWorkName(t));
-  });
-  const activeDates=new Set(Object.keys(workByDate));
-  const leaveByDate={};
-  leaves.filter(l=>calendarDateKey(l.leave_date).startsWith(monthPrefix)).forEach(l=>{
-    const d=calendarDateKey(l.leave_date);
-    if(d)leaveByDate[d]=true;
-  });
-  const leaveDates=new Set(Object.keys(leaveByDate));
-  const grid=$('monthCalendarGrid'); let s='';
-  const offset=first.getDay();
-  for(let i=0;i<42;i++){
-    const dayNum=i-offset+1;
-    const dateObj=new Date(calYear,calMonth,dayNum);
-    const iso=`${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
-    const muted=dateObj.getMonth()!==calMonth;
-    const names=workByDate[iso]||[];
-    const isActive=names.length>0, isLeave=leaveDates.has(iso), isToday=iso===today;
-    const isSunday=dateObj.getDay()===0;
-    let cls='calDay'+(muted?' muted':'')+(isActive?' activeDay':'')+(isLeave?' leaveDay':'')+(isSunday?' weeklyOffDay':'')+(isToday?' todayDay':'');
-    const sundayLabel=isSunday?'<span class="calDot">Weekly Off</span>':'';
-    const titleParts=[];
-    if(isActive)titleParts.push('Work Received');
-    if(isLeave)titleParts.push('Leave');
-    if(!titleParts.length)titleParts.push(`Click to add work for ${iso}`);
-    s+=`<div class="${cls}" onclick="addWorkFromCalendar('${iso}')" title="${esc(titleParts.join(' | '))}">${dateObj.getDate()}${isLeave?'<span class="calDot">Leave</span>':''}${sundayLabel}</div>`;
-  }
-  grid.innerHTML=s;
-  $('activeDayCount').textContent=activeDates.size;
-  $('leaveDayCount').textContent=leaveDates.size;
-}
+ const first=new Date(calYear,calMonth,1);$('calMonthTitle').textContent=first.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+ const monthPrefix=`${calYear}-${String(calMonth+1).padStart(2,'0')}-`;const monthTasks=tasks.filter(t=>calendarDateKey(t.start_date||t.received_date||t.completed_date||t.completed_at).startsWith(monthPrefix));
+ const workByDate={},completedByDate={},visitByDate={};monthTasks.forEach(t=>{const d=calendarDateKey(t.start_date||t.received_date||t.completed_date||t.completed_at);if(d)(workByDate[d]||(workByDate[d]=[])).push(calendarWorkName(t));const cd=calendarDateKey(t.completed_at||t.completed_date);if(cd)completedByDate[cd]=true});
+ getUnitVisits().forEach(v=>[v.departure_date,v.return_date].map(calendarDateKey).filter(Boolean).forEach(d=>{if(d.startsWith(monthPrefix))visitByDate[d]=true}));
+ const leaveDates=new Set(leaves.filter(l=>calendarDateKey(l.leave_date).startsWith(monthPrefix)).map(l=>calendarDateKey(l.leave_date)).filter(Boolean));const holidayByDate={};smartHolidays().filter(x=>String(x.date).startsWith(monthPrefix)).forEach(x=>holidayByDate[x.date]=x.name||'Holiday');const activeDates=new Set(Object.keys(workByDate));
+ const grid=$('monthCalendarGrid');let s='';const offset=first.getDay();for(let i=0;i<42;i++){const dayNum=i-offset+1,dateObj=new Date(calYear,calMonth,dayNum),iso=`${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;const muted=dateObj.getMonth()!==calMonth,names=workByDate[iso]||[],isActive=names.length>0,isLeave=leaveDates.has(iso),isToday=iso===today,isSunday=dateObj.getDay()===0,isHoliday=!!holidayByDate[iso],isCompleted=!!completedByDate[iso],isVisit=!!visitByDate[iso];let cls='calDay'+(muted?' muted':'')+(isActive?' activeDay':'')+(isLeave?' leaveDay':'')+(isHoliday?' holidayDay':'')+(isCompleted?' completedCalDay':'')+(isVisit?' unitVisitDay':'')+(isSunday?' weeklyOffDay':'')+(isToday?' todayDay':'');const labels=[];if(isSunday)labels.push('Weekly Off');if(isHoliday)labels.push('Holiday: '+holidayByDate[iso]);if(isLeave)labels.push('Leave');if(isVisit)labels.push('Unit Visit');if(isCompleted)labels.push('Completed Work');if(isActive)labels.push('Work');if(!labels.length)labels.push('Click to add work for '+iso);s+=`<div class="${cls}" onclick="addWorkFromCalendar('${iso}')" title="${esc(labels.join(' | '))}">${dateObj.getDate()}${isHoliday?'<span class="calDot" style="color:#c2410c">Holiday</span>':''}${isLeave?'<span class="calDot">Leave</span>':''}${isVisit?'<span class="calDot" style="color:#2563eb">Visit</span>':''}${isCompleted?'<span class="calDot" style="color:#16a34a">Done</span>':''}${isSunday?'<span class="calDot">Weekly Off</span>':''}</div>`}grid.innerHTML=s;$('activeDayCount').textContent=activeDates.size;$('leaveDayCount').textContent=leaveDates.size;renderHolidayList();const legend=$('.calLegend');if(legend)legend.innerHTML='<span>🟢 Work</span><span>🟡 Leave</span><span>🔴 Weekly Off</span><span>🟠 Holiday</span><span>🔵 Visit</span><span>✅ Completed</span><span>🔵 Today</span>'}
+
 function changeMonth(delta){
   calMonth+=delta;
   if(calMonth<0){calMonth=11;calYear--}
   if(calMonth>11){calMonth=0;calYear++}
-  renderCalendar();
+  renderCalendar();renderDashboardExtras();
 }
 function clearLeaveForm(){
   $('leaveForm').reset();$('leaveDate').value=today;
@@ -2376,7 +2371,9 @@ async function deleteUnitVisit(id){if(!confirm('Delete this Unit Visit record?')
 function renderUnitVisits(){const box=$('unitVisitList');if(!box)return;const q=($('unitVisitSearch')?.value||'').trim().toLowerCase();let a=getUnitVisits().filter(v=>!q||[v.home_unit,v.visit_unit,v.purpose,v.remarks,v.departure_date,v.return_date].filter(Boolean).join(' ').toLowerCase().includes(q));a.sort((x,y)=>String(y.departure_date||'').localeCompare(String(x.departure_date||''))||String(y.departure_time||'').localeCompare(String(x.departure_time||'')));box.innerHTML=a.length?a.map(v=>{const returned=!!(v.return_date&&v.return_time);const dur=returned?uvDuration({date:v.departure_date,time:v.departure_time},{date:v.return_date,time:v.return_time}):'-';return `<div class="task"><h3>🚗 ${esc(v.visit_unit||'-')} <span class="badge ${returned?'done':'progress'}">${returned?'Returned':'On Visit'}</span></h3><div class="meta"><b>From:</b> ${esc(v.home_unit||'Tirunelveli Unit')} • <b>Purpose:</b> ${esc(v.purpose||'-')}<br><b>Departure:</b> ${esc(uvDate(v.departure_date))} ${esc(v.departure_time||'')}<br><b>Return:</b> ${returned?esc(uvDate(v.return_date))+' '+esc(v.return_time):'Not returned'} • <b>Duration:</b> ${esc(dur)}${v.remarks?'<br>Remarks: '+esc(v.remarks):''}</div><div class="actions"><button class="secondary smallbtn" onclick="editUnitVisit('${esc(v.id)}')">✏️ Edit</button>${!returned?`<button class="primary smallbtn" onclick="markUnitVisitReturned('${esc(v.id)}')">🏠 Mark Returned</button>`:''}<button class="secondary smallbtn" onclick="deleteUnitVisit('${esc(v.id)}')">🗑️ Delete</button></div></div>`}).join(''):'<p>No Unit Visit records.</p>'}
 async function markUnitVisitReturned(id){const a=getUnitVisits();const v=a.find(x=>x.id===id);if(!v)return;const now=new Date();v.return_date=localISODate(now);v.return_time=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');v.updated_at=now.toISOString();setUnitVisits(a);await saveUnitVisitCloud(v);await loadUnitVisitsCloud();renderUnitVisits()}
 $('unitVisitForm').onsubmit=async e=>{e.preventDefault();const a=getUnitVisits();const id=$('uvEditingId').value||('uv_'+Date.now()+'_'+Math.random().toString(36).slice(2,8));const row={id,home_unit:'Tirunelveli Unit',visit_unit:$('uvVisitUnit').value,purpose:$('uvPurpose').value.trim(),departure_date:$('uvDepartureDate').value,departure_time:$('uvDepartureTime').value,return_date:$('uvReturnDate').value||'',return_time:$('uvReturnTime').value||'',remarks:$('uvRemarks').value.trim(),updated_at:new Date().toISOString(),created_by:user?.id||null};const i=a.findIndex(x=>x.id===id);if(i>=0)a[i]=row;else{row.created_at=new Date().toISOString();a.push(row)}setUnitVisits(a);const cloud=await saveUnitVisitCloud(row);await loadUnitVisitsCloud();renderUnitVisits();clearUnitVisitForm();$('unitVisitMsg').innerHTML=cloud?'<div class="msg ok">Unit Visit saved and synced to PWA.</div>':'<div class="msg ok">Unit Visit saved locally. Supabase sync is unavailable until the unit_visits table is created.</div>'};
-  // Expose Unit Visit handlers because the cards use inline onclick handlers and the main app calls these functions.
+  // Expose Unit Visit state/handlers because calendar, backup and cards call these from outside this IIFE.
+  window.getUnitVisits=getUnitVisits;
+  window.setUnitVisits=setUnitVisits;
   window.initUnitVisitForm=initUnitVisitForm;
   window.clearUnitVisitForm=clearUnitVisitForm;
   window.cancelUnitVisitEdit=cancelUnitVisitEdit;
