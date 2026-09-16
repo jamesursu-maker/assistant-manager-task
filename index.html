@@ -916,7 +916,22 @@ function showTab(id,btn){
   if(id==='tasks')renderTasks();
   if(id==='report'&&!$('reportBox').innerHTML.trim())clearReport();
   if(id==='phase3'){renderP3Categories();loadP3Permissions();applyP3Permissions();}
-  if(id==='completedForm'){populateCompletedMyWork();renderCompletedTasks();}
+  if(id==='completedForm'){
+    populateCompletedMyWork();
+    renderCompletedTasks();
+    // Mobile/PWA: refresh the completed-work dataset from Supabase before the user sees history.
+    // This prevents a stale local/cached task list from differing from the desktop session.
+    setTimeout(async()=>{
+      try{
+        await waitForAuthenticatedSession(5);
+        if(user&&sb){
+          await loadTasks();
+          populateCompletedMyWork();
+          renderCompletedTasks();
+        }
+      }catch(_){ }
+    },120);
+  }
   if(id==='reminders')renderReminders();
   if(id==='leave')renderLeaves();
   if(id==='attendance')renderAttendance();
@@ -973,6 +988,7 @@ async function mobileRefreshIfNeeded(){
   if(Date.now()-lastFullSyncAt<5000)return;
   try{await loadAll();}catch(_){}
 }
+window.addEventListener('online',async()=>{try{await loadAll();}catch(_){}});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')mobileRefreshIfNeeded()});
 window.addEventListener('pageshow',()=>mobileRefreshIfNeeded());
 function getTaskTimeEntries(t){
@@ -1627,32 +1643,51 @@ function completedTaskHTML(t){
   <div class="actions"><button class="primary smallbtn" onclick="viewCompletedWorkHistory('${esc(t.id)}')">📋 Work History</button><button class="secondary smallbtn" onclick="reworkCompletedTask('${esc(t.id)}')">🔄 Rework</button><button class="secondary smallbtn" onclick="viewEditCompletedTask('${esc(t.id)}')">✏️ View / Edit</button></div><div id="givenby-edit-${esc(t.id)}"></div></div>`;
 }
 async function viewCompletedWorkHistory(id){
-  // Always refresh the selected task and its complete cloud time history before opening the modal.
-  // This prevents mobile PWA/local-cache data from showing a different history than desktop.
-  await waitForAuthenticatedSession(4);
+  // Always use the current signed-in account's cloud task + cloud time-log data.
+  // Mobile PWA may restore its auth session a little later than desktop.
+  await waitForAuthenticatedSession(6);
   let t=tasks.find(x=>String(x.id)===String(id));
-  try{
-    const tr=await sb.from('tasks').select('*').eq('id',id).maybeSingle();
-    if(!tr.error&&tr.data)t=tr.data;
-  }catch(_){}
+  let cloudTask=null;
+  for(let attempt=0;attempt<4;attempt++){
+    try{
+      if(sb&&user){
+        const tr=await sb.from('tasks').select('*').eq('id',id).maybeSingle();
+        if(!tr.error&&tr.data){cloudTask=tr.data;break;}
+      }
+    }catch(_){ }
+    await new Promise(res=>setTimeout(res,400*(attempt+1)));
+  }
+  if(cloudTask)t=cloudTask;
   if(!t)return;
-  seedLegacyTaskTime(t);
+
   const byDate={};
   let cloudLoaded=false;
-  for(let attempt=0;attempt<3;attempt++){
+  for(let attempt=0;attempt<5;attempt++){
     try{
-      const r=await sb.from('work_time_logs').select('*').eq('task_id',id).order('work_date',{ascending:true});
-      if(!r.error){
-        (r.data||[]).forEach(x=>{byDate[x.work_date]=x});
-        cloudLoaded=true;
-        break;
+      if(sb&&user){
+        const r=await sb.from('work_time_logs').select('task_id,work_date,start_time,end_time,updated_at').eq('task_id',id).order('work_date',{ascending:true});
+        if(!r.error){
+          (r.data||[]).forEach(x=>{if(x.work_date)byDate[x.work_date]=x;});
+          cloudLoaded=true;
+          break;
+        }
       }
-    }catch(_){}
-    await new Promise(res=>setTimeout(res,500*(attempt+1)));
+    }catch(_){ }
+    await new Promise(res=>setTimeout(res,400*(attempt+1)));
   }
-  // Local entries are used only for dates not returned by cloud. Cloud remains authoritative.
-  getLocalTimeHistory(id).forEach(x=>{if(!byDate[x.work_date])byDate[x.work_date]=x});
-  if(t.start_date&&(t.start_time||t.end_time)&&!byDate[t.start_date])byDate[t.start_date]={work_date:t.start_date,start_time:t.start_time||null,end_time:t.end_time||null};
+
+  // If cloud history is unavailable, retain the existing browser history as a fallback.
+  // When cloud history is available, it is authoritative and local rows never replace it.
+  if(!cloudLoaded){
+    getLocalTimeHistory(id).forEach(x=>{if(x.work_date)byDate[x.work_date]=x;});
+  }else{
+    // Preserve legacy Day-1 only if that date is absent from the cloud history.
+    getLocalTimeHistory(id).forEach(x=>{if(x.work_date&&!byDate[x.work_date])byDate[x.work_date]=x;});
+  }
+  if(t.start_date&&(t.start_time||t.end_time)&&!byDate[t.start_date]){
+    byDate[t.start_date]={work_date:t.start_date,start_time:t.start_time||null,end_time:t.end_time||null};
+  }
+
   const rows=Object.values(byDate).filter(x=>x.work_date).sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date)));
   const minutes=rows.reduce((sum,x)=>sum+minutesBetween(x.start_time,x.end_time),0);
   const validDays=rows.filter(x=>x.start_time&&x.end_time).length;
@@ -1660,12 +1695,13 @@ async function viewCompletedWorkHistory(id){
   const completedDate=t.completed_at?t.completed_at.slice(0,10):(t.completed_date||'');
   const modal=document.createElement('div');
   modal.className='completed-history-modal';
-  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove()});
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
   const escH=esc;
   const duration=(a,b)=>{
     if(!a||!b)return '-';
     const [sh,sm]=String(a).slice(0,5).split(':').map(Number),[eh,em]=String(b).slice(0,5).split(':').map(Number);
-    let m=(eh*60+em)-(sh*60+sm);if(m<0)m+=1440;return `${Math.floor(m/60)}h ${m%60}m`;
+    let m=(eh*60+em)-(sh*60+sm);if(m<0)m+=1440;
+    return `${Math.floor(m/60)}h ${m%60}m`;
   };
   modal.innerHTML=`<div class="completed-history-card">
     <div class="completed-history-head"><h2>📋 Work History – ${escH(t.project||'-')}</h2><button class="completed-history-close" type="button">×</button></div>
