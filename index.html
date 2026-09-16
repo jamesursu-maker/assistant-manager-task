@@ -924,22 +924,57 @@ function showTab(id,btn){
   if(id==='unitVisit'){initUnitVisitForm();renderUnitVisits();}
   if(id==='plus'){plusInit();}
 }
-async function loadAll(){await loadTasks();await loadReminders();await loadLeaves();if(window.loadUnitVisitsCloud)await window.loadUnitVisitsCloud();populateRelatedWork();renderDashboard();renderInbox();renderMyWork();renderReminders();renderLeaves();renderUnitVisits();populateCompletedMyWork();renderCompletedTasks();if(typeof plusRenderPersonMaster==='function')plusRenderPersonMaster();if(typeof plusRenderGivenBy==='function')plusRenderGivenBy()}
+let lastFullSyncAt=0;
+async function waitForAuthenticatedSession(retries=4){
+  if(!sb)return null;
+  for(let i=0;i<retries;i++){
+    try{
+      const r=await sb.auth.getSession();
+      if(r.data?.session?.user){ user=r.data.session.user; return r.data.session; }
+    }catch(_){}
+    await new Promise(res=>setTimeout(res,400*(i+1)));
+  }
+  return null;
+}
+async function loadAll(){
+  await waitForAuthenticatedSession(4);
+  await loadTasks();
+  await loadReminders();
+  await loadLeaves();
+  if(window.loadUnitVisitsCloud)await window.loadUnitVisitsCloud();
+  populateRelatedWork();renderDashboard();renderInbox();renderMyWork();renderReminders();renderLeaves();renderUnitVisits();populateCompletedMyWork();renderCompletedTasks();
+  if(typeof plusRenderPersonMaster==='function')plusRenderPersonMaster();
+  if(typeof plusRenderGivenBy==='function')plusRenderGivenBy();
+  lastFullSyncAt=Date.now();
+}
 async function refreshTimeLogCache(){
   timeLogCache={};
-  try{
-    if(!sb||!tasks.length)return;
-    const ids=tasks.map(t=>t.id).filter(Boolean);
-    if(!ids.length)return;
-    const r=await sb.from('work_time_logs').select('task_id,work_date,start_time,end_time').in('task_id',ids);
-    if(r.error)return;
-    (r.data||[]).forEach(x=>{
-      if(!timeLogCache[x.task_id])timeLogCache[x.task_id]=[];
-      timeLogCache[x.task_id].push(x);
-    });
-    Object.keys(timeLogCache).forEach(id=>timeLogCache[id].sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date))));
-  }catch(_){ }
+  if(!sb||!tasks.length)return;
+  await waitForAuthenticatedSession(3);
+  const ids=tasks.map(t=>t.id).filter(Boolean);
+  if(!ids.length)return;
+  for(let attempt=0;attempt<3;attempt++){
+    try{
+      const r=await sb.from('work_time_logs').select('task_id,work_date,start_time,end_time').in('task_id',ids).order('work_date',{ascending:true});
+      if(!r.error){
+        (r.data||[]).forEach(x=>{
+          if(!timeLogCache[x.task_id])timeLogCache[x.task_id]=[];
+          timeLogCache[x.task_id].push(x);
+        });
+        Object.keys(timeLogCache).forEach(id=>timeLogCache[id].sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date))));
+        return;
+      }
+    }catch(_){}
+    await new Promise(res=>setTimeout(res,500*(attempt+1)));
+  }
 }
+async function mobileRefreshIfNeeded(){
+  if(!user||!sb)return;
+  if(Date.now()-lastFullSyncAt<5000)return;
+  try{await loadAll();}catch(_){}
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')mobileRefreshIfNeeded()});
+window.addEventListener('pageshow',()=>mobileRefreshIfNeeded());
 function getTaskTimeEntries(t){
   const cloud=Array.isArray(timeLogCache[String(t?.id)])?timeLogCache[String(t.id)]:[];
   const local=getLocalTimeHistory(t?.id);
@@ -1592,14 +1627,30 @@ function completedTaskHTML(t){
   <div class="actions"><button class="primary smallbtn" onclick="viewCompletedWorkHistory('${esc(t.id)}')">📋 Work History</button><button class="secondary smallbtn" onclick="reworkCompletedTask('${esc(t.id)}')">🔄 Rework</button><button class="secondary smallbtn" onclick="viewEditCompletedTask('${esc(t.id)}')">✏️ View / Edit</button></div><div id="givenby-edit-${esc(t.id)}"></div></div>`;
 }
 async function viewCompletedWorkHistory(id){
-  const t=tasks.find(x=>String(x.id)===String(id));
+  // Always refresh the selected task and its complete cloud time history before opening the modal.
+  // This prevents mobile PWA/local-cache data from showing a different history than desktop.
+  await waitForAuthenticatedSession(4);
+  let t=tasks.find(x=>String(x.id)===String(id));
+  try{
+    const tr=await sb.from('tasks').select('*').eq('id',id).maybeSingle();
+    if(!tr.error&&tr.data)t=tr.data;
+  }catch(_){}
   if(!t)return;
   seedLegacyTaskTime(t);
   const byDate={};
-  try{
-    const r=await sb.from('work_time_logs').select('*').eq('task_id',id).order('work_date',{ascending:true});
-    if(!r.error)(r.data||[]).forEach(x=>{byDate[x.work_date]=x});
-  }catch(_){ }
+  let cloudLoaded=false;
+  for(let attempt=0;attempt<3;attempt++){
+    try{
+      const r=await sb.from('work_time_logs').select('*').eq('task_id',id).order('work_date',{ascending:true});
+      if(!r.error){
+        (r.data||[]).forEach(x=>{byDate[x.work_date]=x});
+        cloudLoaded=true;
+        break;
+      }
+    }catch(_){}
+    await new Promise(res=>setTimeout(res,500*(attempt+1)));
+  }
+  // Local entries are used only for dates not returned by cloud. Cloud remains authoritative.
   getLocalTimeHistory(id).forEach(x=>{if(!byDate[x.work_date])byDate[x.work_date]=x});
   if(t.start_date&&(t.start_time||t.end_time)&&!byDate[t.start_date])byDate[t.start_date]={work_date:t.start_date,start_time:t.start_time||null,end_time:t.end_time||null};
   const rows=Object.values(byDate).filter(x=>x.work_date).sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date)));
