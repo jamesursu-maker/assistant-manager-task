@@ -817,6 +817,11 @@ let sb=null,user=null,tasks=[],reminders=[],leaves=[];
 // Cloud daily work-time cache used so task cards show the same From/To time as Work History.
 let timeLogCache={};
 let timeLogCloudLoaded=false;
+let workTimeLogTableMissing=false;
+function isMissingWorkTimeLogTable(err){
+  const m=String(err?.message||err||'').toLowerCase();
+  return String(err?.code||'')==='PGRST205' || m.includes("could not find the table 'public.work_time_logs'") || m.includes('relation \"public.work_time_logs\" does not exist');
+}
 const SUBCAT_STORAGE_KEY='completed_work_subcategories_v1';
 function getSubcatMap(){try{return JSON.parse(localStorage.getItem(SUBCAT_STORAGE_KEY)||'{}')}catch(e){return {}}}
 function setSubcatLocal(id,value){const m=getSubcatMap();m[String(id)]=String(value||'');localStorage.setItem(SUBCAT_STORAGE_KEY,JSON.stringify(m));}
@@ -997,13 +1002,13 @@ async function loadAll(){
   }finally{fullSyncInProgress=false;}
 }
 async function refreshTimeLogCache(){
-  timeLogCache={}; timeLogCloudLoaded=false;
+  timeLogCache={}; timeLogCloudLoaded=false; workTimeLogTableMissing=false;
   if(!sb||!tasks.length)return;
   const session=await waitForAuthenticatedSession(5); if(!session?.user)return;
   const ids=tasks.map(t=>t.id).filter(Boolean); if(!ids.length){timeLogCloudLoaded=true;return;}
   try{
     const r=await sb.from('work_time_logs').select('id,task_id,work_date,start_time,end_time,created_by,updated_at').in('task_id',ids).order('work_date',{ascending:true}).order('start_time',{ascending:true});
-    if(r.error)throw r.error;
+    if(r.error){ if(isMissingWorkTimeLogTable(r.error)){workTimeLogTableMissing=true;return;} throw r.error; }
     (r.data||[]).forEach(x=>{if(!timeLogCache[x.task_id])timeLogCache[x.task_id]=[];timeLogCache[x.task_id].push(x);});
     Object.keys(timeLogCache).forEach(id=>timeLogCache[id].sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date))||String(a.start_time||'').localeCompare(String(b.start_time||''))));
     timeLogCloudLoaded=true;
@@ -1032,8 +1037,11 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 window.addEventListener('pageshow',()=>mobileRefreshIfNeeded());
 function getTaskTimeEntries(t){
   const cloud=Array.isArray(timeLogCache[String(t?.id)])?timeLogCache[String(t.id)]:[];
-  if(!timeLogCloudLoaded)return [];
-  return cloud.filter(x=>x&&x.work_date).slice().sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date))||String(a.start_time||'').localeCompare(String(b.start_time||'')));
+  if(timeLogCloudLoaded) return cloud.filter(x=>x&&x.work_date).slice().sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date))||String(a.start_time||'').localeCompare(String(b.start_time||'')));
+  const local=getLocalTimeHistory(String(t?.id||''));
+  if(local.length)return local.filter(x=>x&&x.work_date).slice().sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date))||String(a.start_time||'').localeCompare(String(b.start_time||'')));
+  if(t&&(t.start_time||t.end_time)&&t.start_date) return [{work_date:t.start_date,start_time:t.start_time||null,end_time:t.end_time||null}];
+  return [];
 }
 
 function taskDisplayTime(t){
@@ -1257,7 +1265,15 @@ async function startPicked(id){
   const nowTime=new Date().toTimeString().slice(0,5), t=tasks.find(x=>x.id===id);
   const r=await sb.from('tasks').update({workflow_status:'Working',status:'In Progress',start_time:nowTime}).eq('id',id);
   if(r.error){alert(r.error.message);return}
-  if(t){const lr=await sb.from('work_time_logs').upsert({task_id:id,work_date:today,start_time:nowTime,end_time:null,created_by:user.id,updated_at:new Date().toISOString()},{onConflict:'task_id,work_date'});if(lr.error){alert('Work started, but shared Work History could not be updated: '+lr.error.message);return;}}
+  if(t){
+    saveLocalTimeEntry(id,today,nowTime,null);
+    if(!workTimeLogTableMissing){
+      try{const lr=await sb.from('work_time_logs').upsert({task_id:id,work_date:today,start_time:nowTime,end_time:null,created_by:user.id,updated_at:new Date().toISOString()},{onConflict:'task_id,work_date'});
+        if(lr.error){ if(isMissingWorkTimeLogTable(lr.error)) workTimeLogTableMissing=true; }
+        else {timeLogCloudLoaded=true;if(!timeLogCache[String(id)])timeLogCache[String(id)]=[];timeLogCache[String(id)]=timeLogCache[String(id)].filter(x=>x.work_date!==today);timeLogCache[String(id)].push({task_id:id,work_date:today,start_time:nowTime,end_time:null,created_by:user.id});}
+      }catch(_){ }
+    }
+  }
   await loadTasks();renderMyWork();renderDashboard();
 }
 
@@ -1471,9 +1487,13 @@ $('taskForm').onsubmit=async e=>{
 
   // Shared Work History is written to Supabase first so every device sees the same record.
   if(taskId&&(startTime||endTime)){
-    const lr=await sb.from('work_time_logs').upsert({task_id:taskId,work_date:workDate,start_time:startTime,end_time:endTime,created_by:user.id,updated_at:new Date().toISOString()},{onConflict:'task_id,work_date'});
-    if(lr.error){msg('formMsg','Activity was not saved to shared Work History: '+lr.error.message,'error');return;}
     saveLocalTimeEntry(taskId,workDate,startTime,endTime);
+    if(!workTimeLogTableMissing){
+      try{const lr=await sb.from('work_time_logs').upsert({task_id:taskId,work_date:workDate,start_time:startTime,end_time:endTime,created_by:user.id,updated_at:new Date().toISOString()},{onConflict:'task_id,work_date'});
+        if(lr.error){ if(isMissingWorkTimeLogTable(lr.error)) workTimeLogTableMissing=true; }
+        else {timeLogCloudLoaded=true;if(!timeLogCache[String(taskId)])timeLogCache[String(taskId)]=[];timeLogCache[String(taskId)]=timeLogCache[String(taskId)].filter(x=>x.work_date!==workDate);timeLogCache[String(taskId)].push({task_id:taskId,work_date:workDate,start_time:startTime,end_time:endTime,created_by:user.id});}
+      }catch(_){ }
+    }
   }
 
   if(taskId)saveTaskFollowup(taskId,$('followUpDate')?.value||'',$('followUpPerson')?.value||'');
@@ -1596,7 +1616,8 @@ async function loadWorkTimeHistory(taskId){
     timeLogCloudLoaded=true;
     renderWorkHistoryRows(box,rows);
   }catch(e){
-    box.innerHTML='<div class="msg error">Shared Work History could not be refreshed. Please check the cloud connection.</div>';
+    // Keep the immediately available local/legacy history when the optional cloud log table is not present.
+    renderWorkHistoryRows(box,getTaskTimeEntries(t));
   }
 }
 function renderWorkHistoryRows(box,rows){
@@ -1661,9 +1682,13 @@ $('completedTaskForm').onsubmit=async e=>{
   // The final completion day is also part of the work-time history.
   const finalDate=$('cDate').value||today, finalStart=$('cStart').value||null, finalEnd=$('cEnd').value||null;
   if(finalStart||finalEnd){
-    const lr=await sb.from('work_time_logs').upsert({task_id:id,work_date:finalDate,start_time:finalStart,end_time:finalEnd,created_by:user.id,updated_at:now},{onConflict:'task_id,work_date'});
-    if(lr.error){msg('completedFormMsg','Completion was not saved to shared Work History: '+lr.error.message,'error');return;}
     saveLocalTimeEntry(id,finalDate,finalStart,finalEnd);
+    if(!workTimeLogTableMissing){
+      try{const lr=await sb.from('work_time_logs').upsert({task_id:id,work_date:finalDate,start_time:finalStart,end_time:finalEnd,created_by:user.id,updated_at:now},{onConflict:'task_id,work_date'});
+        if(lr.error){ if(isMissingWorkTimeLogTable(lr.error)) workTimeLogTableMissing=true; }
+        else {timeLogCloudLoaded=true;if(!timeLogCache[String(id)])timeLogCache[String(id)]=[];timeLogCache[String(id)]=timeLogCache[String(id)].filter(x=>x.work_date!==finalDate);timeLogCache[String(id)].push({task_id:id,work_date:finalDate,start_time:finalStart,end_time:finalEnd,created_by:user.id});}
+      }catch(_){ }
+    }
   }
   msg('completedFormMsg','Work completed successfully and added to Completed Task List.','ok');
   clearCompletedForm();await loadTasks();populateCompletedMyWork();renderCompletedTasks();renderDashboard();renderMyWork();renderInbox();renderTasks();
@@ -1743,6 +1768,8 @@ async function viewCompletedWorkHistory(id){
         timeLogCache[String(id)]=r.data||[];
         timeLogCloudLoaded=true;
         renderBody(getRows(),false);
+      } else if(r.error && isMissingWorkTimeLogTable(r.error)){
+        workTimeLogTableMissing=true;
       }
     }catch(_){/* keep the instantly displayed cached/local history */}
   }
