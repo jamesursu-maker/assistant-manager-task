@@ -1028,11 +1028,20 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 window.addEventListener('pageshow',()=>mobileRefreshIfNeeded());
 function getTaskTimeEntries(t){
   const cloud=Array.isArray(timeLogCache[String(t?.id)])?timeLogCache[String(t.id)]:[];
-  if(timeLogCloudLoaded) return cloud.filter(x=>x&&x.work_date).slice().sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date))||String(a.start_time||'').localeCompare(String(b.start_time||'')));
-  const local=getLocalTimeHistory(String(t?.id||''));
-  if(local.length)return local.filter(x=>x&&x.work_date).slice().sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date))||String(a.start_time||'').localeCompare(String(b.start_time||'')));
-  if(t&&(t.start_time||t.end_time)&&t.start_date) return [{work_date:t.start_date,start_time:t.start_time||null,end_time:t.end_time||null}];
-  return [];
+  let rows=[];
+  if(timeLogCloudLoaded) rows=cloud.filter(x=>x&&x.work_date).slice();
+  else {
+    const local=getLocalTimeHistory(String(t?.id||''));
+    if(local.length) rows=local.filter(x=>x&&x.work_date).slice();
+  }
+  // For legacy/single-day completed tasks, the task's original Start/End pair is the authoritative desktop value.
+  // Older cloud work_time_logs can contain only the short final activity interval (e.g. 17:24→17:26),
+  // which caused mobile to disagree with the established desktop history. Do not alter multi-day histories.
+  if(rows.length===1 && t?.start_date && t?.start_time && t?.end_time && String(rows[0].work_date)===String(t.start_date)){
+    rows=[{...rows[0],work_date:t.start_date,start_time:t.start_time,end_time:t.end_time}];
+  }
+  if(!rows.length && t&&(t.start_time||t.end_time)&&t.start_date) rows=[{work_date:t.start_date,start_time:t.start_time||null,end_time:t.end_time||null}];
+  return rows.sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date))||String(a.start_time||'').localeCompare(String(b.start_time||'')));
 }
 
 function taskDisplayTime(t){
@@ -1602,7 +1611,11 @@ async function loadWorkTimeHistory(taskId){
   try{
     const r=await sb.from('work_time_logs').select('*').eq('task_id',taskId).order('work_date',{ascending:true}).order('start_time',{ascending:true});
     if(r.error)throw r.error;
-    const rows=Array.isArray(r.data)?r.data:[];
+    let rows=Array.isArray(r.data)?r.data:[];
+    // Keep the same single-day legacy normalization used by task cards so the popup and list agree.
+    if(rows.length===1 && t?.start_date && t?.start_time && t?.end_time && String(rows[0].work_date)===String(t.start_date)){
+      rows=[{...rows[0],work_date:t.start_date,start_time:t.start_time,end_time:t.end_time}];
+    }
     timeLogCache[String(taskId)]=rows;
     timeLogCloudLoaded=true;
     renderWorkHistoryRows(box,rows);
@@ -2280,7 +2293,8 @@ function setUnitVisits(a){localStorage.setItem(UNIT_VISIT_KEY,JSON.stringify(a||
 async function loadUnitVisitsCloud(){
   if(!user||!sb)return getUnitVisits();
   try{
-    const r=await sb.from('unit_visits').select('*').eq('created_by',user.id).order('departure_date',{ascending:false}).order('departure_time',{ascending:false});
+    // Load the shared Unit Visit records without filtering by created_by. Older records may have been created before created_by was populated; filtering them out made mobile show an empty history even though the cloud table contained records.
+    const r=await sb.from('unit_visits').select('*').order('departure_date',{ascending:false}).order('departure_time',{ascending:false});
     if(r.error) { unitVisitsCloudReady=false; return []; }
     unitVisitsCloudReady=true;
     const rows=Array.isArray(r.data)?r.data:[];
