@@ -1995,96 +1995,15 @@ function exportCompletedWorkExcel(){
   XLSX.writeFile(wb,`Completed_Work_Report_${date}.xlsx`);
   msg('reportMsg','Excel report created. All filtered completed works are included, including uncategorized works.','ok');
 }
-function printReport(){const box=$('reportBox');if(!box||!box.innerText.trim()){msg('reportMsg','Generate the report first.','error');return}const w=window.open('','_blank','width=1100,height=800');if(!w){msg('reportMsg','Please allow pop-ups to print the report.','error');return}w.document.write(`<html><head><title>Completed Work Report</title><style>body{font-family:Arial;padding:24px}.report-table{width:100%;border-collapse:collapse;margin-bottom:18px}.report-table th,.report-table td{border:1px solid #ddd;padding:7px}.report-table th{background:#f5f5f5}</style>
-<style id="mobile-responsive-final-v1">
-/* Final mobile/PWA layout fix: prevent the desktop 300px sidebar from squeezing the page. */
-@media (max-width: 900px){
-  html,body{width:100%;max-width:100%;overflow-x:hidden;}
-  header{position:relative;top:auto;padding:12px 12px 10px;}
-  .appHeader{align-items:center;gap:10px;}
-  .brandText h1{font-size:17px;line-height:1.2;}
-  .brandText p{font-size:12px;}
-  .userbar{font-size:11px;}
-  .companyLogo{width:58px;height:58px;}
-  #installAppBtn{right:76px!important;top:10px!important;font-size:11px!important;padding:7px 9px!important;}
-
-  nav.sidebarNav{position:relative!important;left:auto!important;top:auto!important;bottom:auto!important;width:100%!important;height:auto!important;max-height:none!important;
-    display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px!important;
-    overflow:visible!important;padding:7px!important;background:#fff!important;box-shadow:0 2px 6px #0001!important;border-right:0!important;z-index:4;}
-  .sidebarNav .menuGroup{margin:0!important;border:0!important;background:transparent!important;display:contents!important;}
-  .sidebarNav .menuItems{display:contents!important;padding:0!important;background:transparent!important;}
-  .sidebarNav .menuItems button,.sidebarNav .menuLogout button{
-    width:100%!important;min-height:40px!important;height:auto!important;margin:0!important;padding:9px 8px!important;
-    border:1px solid #d8e0e8!important;border-left:3px solid transparent!important;border-radius:6px!important;
-    background:#eef2f6!important;text-align:left!important;font-size:12px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
-  }
-  .sidebarNav .menuItems button.active{background:#17365d!important;color:#fff!important;border-left-color:#f2c300!important;}
-  .sidebarNav .menuLogout{grid-column:1/-1!important;margin:2px 0 0!important;padding:5px 0 0!important;border-top:1px solid #dfe5ec!important;}
-  .sidebarNav .menuLogout .menuItems{display:block!important;}
-  .sidebarNav .menuLogout button{display:block!important;text-align:center!important;}
-
-  #infoTicker,.infoTicker{position:relative!important;top:auto!important;left:auto!important;width:calc(100% - 14px)!important;margin:7px!important;height:46px!important;}
-  .infoTickerLabel{padding:0 10px!important;font-size:12px!important;}
-  .infoTickerControls{padding:0 5px!important;gap:4px!important;}
-  .infoTickerControls button{width:34px!important;height:34px!important;font-size:15px!important;}
-  .infoTickerItem{font-size:11px!important;}
-
-  main{width:100%!important;max-width:none!important;margin:0!important;padding:8px!important;}
-  main>section{width:100%!important;max-width:none!important;}
-  .card{padding:12px!important;border-radius:9px!important;}
-  .grid{grid-template-columns:1fr!important;}
-  .dashboardTop,.dashboardLists{grid-template-columns:1fr!important;}
-  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
-  input,select,textarea{font-size:16px!important;min-width:0!important;}
-  .tabs2{gap:4px!important;}
-  .tabs2 button{font-size:12px!important;}
-  .task{padding:10px!important;}
-
-  .form-popup-backdrop,#inboxFormWrap,.scrollModalBackdrop{padding:6px!important;align-items:flex-start!important;}
-  .form-popup-card,#assignWorkFormWrap.assign-modal,.scrollModal{width:100%!important;max-width:100%!important;max-height:96vh!important;margin-top:6px!important;border-radius:9px!important;}
-  .form-popup-card{overflow:auto!important;}
-  .assign-modal-body,.scrollModalBody{padding:12px!important;}
-  .assign-modal-header,.scrollModalHeader{padding:11px 13px!important;}
+function printReport(){
+  const box=$('reportBox');
+  if(!box||!box.innerText.trim()){msg('reportMsg','Generate the report first.','error');return}
+  const w=window.open('','_blank','width=1100,height=800');
+  if(!w){msg('reportMsg','Please allow pop-ups to print the report.','error');return}
+  const styles=`<style>body{font-family:Arial,sans-serif;padding:24px;color:#17212b}.report-table{width:100%;border-collapse:collapse;margin-bottom:18px}.report-table th,.report-table td{border:1px solid #ddd;padding:7px}.report-table th{background:#f5f5f5}h2{margin-top:0}</style>`;
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Completed Work Report</title>'+styles+'</head><body><h2>Completed Work Report</h2>'+box.innerHTML+'</body></html>');
+  w.document.close();w.focus();setTimeout(()=>w.print(),300);
 }
-
-@media (max-width: 480px){
-  .brandText h1{font-size:15px;}
-  .companyLogo{width:50px;height:50px;}
-  nav.sidebarNav{grid-template-columns:1fr 1fr!important;}
-  .sidebarNav .menuItems button,.sidebarNav .menuLogout button{font-size:11px!important;min-height:38px!important;padding:8px 7px!important;}
-  .kpis{grid-template-columns:1fr 1fr!important;}
-  .infoTickerLabel{font-size:11px!important;padding:0 8px!important;}
-}
-</style>
-</head><body><h1>📊 Completed Work Report</h1>${box.innerHTML}
-<script id="new-pwa-runtime-v1">
-(function(){
-  let deferredPrompt=null;
-  function ensureInstallButton(){
-    if(document.getElementById('newPwaInstallBtn')) return;
-    const b=document.createElement('button');
-    b.id='newPwaInstallBtn'; b.type='button'; b.textContent='📲 Install App';
-    b.style.cssText='position:fixed;right:18px;bottom:18px;z-index:9999;background:#17365d;color:#fff;border:0;border-radius:9px;padding:11px 15px;font-weight:bold;box-shadow:0 3px 12px #0003;display:none;cursor:pointer;';
-    document.body.appendChild(b);
-    b.addEventListener('click',async function(){
-      if(!deferredPrompt){ alert('Use the browser menu → Install / Add to Home Screen.'); return; }
-      deferredPrompt.prompt();
-      try{ await deferredPrompt.userChoice; }catch(e){}
-      deferredPrompt=null; b.style.display='none';
-    });
-  }
-  window.addEventListener('beforeinstallprompt',function(e){
-    e.preventDefault(); deferredPrompt=e; ensureInstallButton();
-    const b=document.getElementById('newPwaInstallBtn'); if(b) b.style.display='block';
-  });
-  window.addEventListener('appinstalled',function(){ deferredPrompt=null; const b=document.getElementById('newPwaInstallBtn'); if(b) b.style.display='none'; });
-  if('serviceWorker' in navigator){
-    window.addEventListener('load',function(){ navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(function(err){ console.error('PWA service worker registration failed:',err); }); });
-  }
-})();
-</script>
-
-</body></html>`);w.document.close();w.focus();setTimeout(()=>w.print(),300)}
 
 async function loadRevisionTimeline(taskId){
   const box=$('revisionTimeline');if(!box)return;
