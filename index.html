@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="app-version" content="Unified-Cloud-PWA-Single-Source-20260917">
+<meta name="app-version" content="Unified-Cloud-PWA-20260917">
 <title>Asst. Manager – Project Task Manager V15 | Daily Time History</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -37,11 +39,11 @@ button.primary{background:#17365d;color:#fff;border:0;border-radius:8px;padding:
 @media(max-width:1100px){.dashboardLists{grid-template-columns:1fr}}
 .monthCalendar{font-size:12px}.calHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .calHead strong{font-size:14px}.calHead button{border:0;background:#e9eef5;border-radius:7px;padding:5px 9px;cursor:pointer}
-.calWeek,.calGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.calWeek,.calGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.calGrid{grid-auto-rows:56px}
 .calWeek div{text-align:center;font-weight:bold;color:#687582;font-size:10px}
-.calDay{min-height:34px;border:1px solid #e5eaf0;border-radius:6px;padding:4px;text-align:center;position:relative;background:#fff}
+.calDay{height:56px;min-height:56px;max-height:56px;box-sizing:border-box;border:1px solid #e5eaf0;border-radius:6px;padding:4px;text-align:center;position:relative;background:#fff;overflow:hidden;line-height:1.15}
 .calDay.muted{opacity:.35}.calDay.activeDay{background:#dff4e5;border-color:#78bf8b;font-weight:bold}
-.calDay.leaveDay{background:#fff0c7;border-color:#e2b84f}.calDay.weeklyOffDay{background:#fff0f0;border-color:#e57373;color:#c62828;font-weight:bold}.calDay.weeklyOffDay .calDot{display:block;font-size:10px;margin-top:2px;color:#c62828}.calDay.todayDay{outline:2px solid #17365d}
+.calDay.leaveDay{background:#fff0c7;border-color:#e2b84f}.calDay.trainingDay{background:#f1e8ff;border-color:#8b5cf6;color:#6d28d9;font-weight:bold}.calDay.trainingDay .calDot{display:block;font-size:10px;margin-top:2px;color:#6d28d9}.calDay.weeklyOffDay{background:#fff0f0;border-color:#e57373;color:#c62828;font-weight:bold}.calDay.weeklyOffDay .calDot{display:block;font-size:10px;margin-top:2px;color:#c62828}.calDay.todayDay{outline:2px solid #17365d}
 .calDot{display:block;font-size:9px;color:#17365d;margin-top:1px}.calLegend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;color:#586674}
 .calStat{margin-top:8px;padding:8px;background:#f4f6f8;border-radius:8px;display:flex;justify-content:space-between;gap:8px}
 .leaveBadge{float:right;min-width:22px;text-align:center;border-radius:12px;padding:2px 6px;background:#fff0c7;color:#7a5a00;font-weight:bold}
@@ -310,7 +312,7 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 📱 Install App
 </button>
 
-</header>
+<button id="cloudSyncBtn" type="button" class="secondary" style="position:absolute;right:18px;bottom:12px;padding:7px 10px;font-size:11px" onclick="manualCloudSync()">☁ Sync</button></header>
 
 <div id="setup" class="card setup" style="max-width:1050px;margin:12px auto">
 <h3>One-time Cloud Setup</h3>
@@ -748,20 +750,30 @@ style="position:absolute;right:100px;top:14px;background:#fff;color:#17365d;font
 <div class="card"><div class="section-addbar"><button class="primary" type="button" onclick="openFormPopupForTab('unitVisit')">➕ Add Unit Visit</button></div></div>
 <div class="card">
   <h2>🚗 Unit Visit / Travel</h2>
-  <div class="info">Home Unit: <b>Tirunelveli Unit</b>. Record when you leave for another Unit and when you return.</div>
+  <div class="info">Select <b>Home Unit</b> and <b>From Unit</b> from the dropdowns. Selecting From Unit will automatically filter the To Unit list. You can add multiple unit-to-unit travel legs.</div>
 </div>
 <div class="card form-entry-card">
   <h3>➕ New Unit Visit</h3>
   <form id="unitVisitForm">
     <input type="hidden" id="uvEditingId" value="">
     <div class="grid">
-      <div><label>Home Unit</label><input id="uvHomeUnit" value="Tirunelveli Unit" readonly></div>
-      <div><label>Visit Unit</label><select id="uvVisitUnit"><option>Madurai Unit</option><option>Namakkal Unit</option><option>Karaikal Unit</option><option>Pollachi Unit</option><option>Mattaparai Unit</option><option>Salem Unit</option><option>Alangudi Unit</option><option>Head Office</option><option>Manalur Unit</option><option>Other Units</option></select></div>
+      <div><label>Home Unit</label><select id="uvHomeUnit"></select></div>
+      <div><label>From Unit Type</label><select id="uvFromType"><option value="home">Home Unit</option><option value="other">Other Unit</option></select></div>
+      <div><label>From Unit</label><select id="uvFromUnit"></select></div>
+      <div><label>To Unit</label><select id="uvVisitUnit"></select></div>
       <div><label>Purpose / Work</label><input id="uvPurpose" placeholder="Company work / discussion / site visit" required></div>
       <div><label>Departure Date</label><input type="date" id="uvDepartureDate" required></div>
       <div><label>Departure Time</label><input type="time" id="uvDepartureTime" required></div>
       <div><label>Return Date</label><input type="date" id="uvReturnDate"></div>
       <div><label>Return Time</label><input type="time" id="uvReturnTime"></div>
+    </div>
+    <div class="card" style="margin-top:10px;background:#f8fafc">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+        <b>🔄 Next Unit Travel</b>
+        <button type="button" class="secondary smallbtn" onclick="addUnitVisitLeg()">➕ Add Next Unit</button>
+      </div>
+      <div class="small" style="margin-top:5px">Example: Tirunelveli → Madurai → Namakkal → Pollachi. Add each next unit after reaching the previous unit.</div>
+      <div id="uvLegs"></div>
     </div>
     <div style="margin-top:10px"><label>Remarks</label><textarea id="uvRemarks" placeholder="Optional remarks"></textarea></div>
     <div class="actions"><button class="primary" id="uvSaveBtn">💾 Save Unit Visit</button><button type="button" class="secondary" onclick="clearUnitVisitForm()">Clear</button><button type="button" class="secondary hidden" id="uvCancelBtn" onclick="cancelUnitVisitEdit()">Cancel Edit</button></div>
@@ -865,6 +877,13 @@ async function init(){
 async function login(){const r=await sb.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(r.error)msg('loginMsg',r.error.message,'error');else{user=r.data.user;openDashboard()}}
 async function signup(){const r=await sb.auth.signUp({email:$('email').value,password:$('password').value});if(r.error)msg('loginMsg',r.error.message,'error');else msg('loginMsg','Account created. Check your email if confirmation is enabled.','ok')}
 async function logout(){await sb.auth.signOut();user=null;showLogin()}
+async function manualCloudSync(){
+  if(!sb||!user){alert('Please connect and sign in first.');return;}
+  const b=$('cloudSyncBtn');if(b){b.disabled=true;b.textContent='☁ Syncing…';}
+  try{await loadAll();if(b)b.textContent='☁ Synced';}
+  catch(_){if(b)b.textContent='☁ Sync';}
+  setTimeout(()=>{if(b){b.disabled=false;b.textContent='☁ Sync';}},1200);
+}
 function showLogin(){$('nav').classList.add('hidden');document.querySelectorAll('main>section').forEach(x=>x.classList.add('hidden'));$('login').classList.remove('hidden');$('userbar').textContent='Not logged in'}
 function openDashboard(){$('nav').classList.remove('hidden');$('login').classList.add('hidden');$('userbar').textContent='Signed in: '+user.email;showTab('dashboard',document.querySelector('nav button'));loadAll()}
 let activeFormPopup=null;
@@ -932,12 +951,9 @@ function showTab(id,btn){
     // This prevents a stale local/cached task list from differing from the desktop session.
     setTimeout(async()=>{
       try{
-        await waitForAuthenticatedSession(5);
-        if(user&&sb){
-          await loadTasks();
-          populateCompletedMyWork();
-          renderCompletedTasks();
-        }
+        if(Date.now()-lastFullSyncAt>=5000) await loadAll();
+        populateCompletedMyWork();
+        renderCompletedTasks();
       }catch(_){ }
     },120);
   }
@@ -960,46 +976,55 @@ async function waitForAuthenticatedSession(retries=4){
   }
   return null;
 }
+let fullSyncInProgress=false;
 async function loadAll(){
-  await waitForAuthenticatedSession(4);
-  await loadTasks();
-  await loadReminders();
-  await loadLeaves();
-  if(window.loadUnitVisitsCloud)await window.loadUnitVisitsCloud();
-  populateRelatedWork();renderDashboard();renderInbox();renderMyWork();renderReminders();renderLeaves();renderUnitVisits();populateCompletedMyWork();renderCompletedTasks();
-  if(typeof plusRenderPersonMaster==='function')plusRenderPersonMaster();
-  if(typeof plusRenderGivenBy==='function')plusRenderGivenBy();
-  lastFullSyncAt=Date.now();
+  if(fullSyncInProgress)return;
+  fullSyncInProgress=true;
+  try{
+    await waitForAuthenticatedSession(3);
+    // Load independent datasets in parallel so the dashboard does not wait for each request one-by-one.
+    await Promise.all([
+      loadTasks(),
+      loadReminders(),
+      loadLeaves(),
+      (window.loadUnitVisitsCloud?window.loadUnitVisitsCloud():Promise.resolve())
+    ]);
+    populateRelatedWork();
+    renderDashboard();renderInbox();renderMyWork();renderReminders();renderLeaves();renderUnitVisits();populateCompletedMyWork();renderCompletedTasks();
+    if(typeof plusRenderPersonMaster==='function')plusRenderPersonMaster();
+    if(typeof plusRenderGivenBy==='function')plusRenderGivenBy();
+    lastFullSyncAt=Date.now();
+  }finally{fullSyncInProgress=false;}
 }
 async function refreshTimeLogCache(){
-  timeLogCache={};
-  timeLogCloudLoaded=false;
+  timeLogCache={}; timeLogCloudLoaded=false;
   if(!sb||!tasks.length)return;
-  const session=await waitForAuthenticatedSession(5);
-  if(!session?.user)return;
-  const ids=tasks.map(t=>t.id).filter(Boolean);
-  if(!ids.length)return;
-  for(let attempt=0;attempt<4;attempt++){
+  const session=await waitForAuthenticatedSession(5); if(!session?.user)return;
+  const ids=tasks.map(t=>t.id).filter(Boolean); if(!ids.length){timeLogCloudLoaded=true;return;}
+  try{
+    const r=await sb.from('work_time_logs').select('id,task_id,work_date,start_time,end_time,created_by,updated_at').in('task_id',ids).order('work_date',{ascending:true}).order('start_time',{ascending:true});
+    if(r.error)throw r.error;
+    (r.data||[]).forEach(x=>{if(!timeLogCache[x.task_id])timeLogCache[x.task_id]=[];timeLogCache[x.task_id].push(x);});
+    Object.keys(timeLogCache).forEach(id=>timeLogCache[id].sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date))||String(a.start_time||'').localeCompare(String(b.start_time||''))));
+    timeLogCloudLoaded=true;
+    await seedMissingLegacyCloudTimeLogs();
+  }catch(e){timeLogCloudLoaded=false;}
+}
+async function seedMissingLegacyCloudTimeLogs(){
+  if(!sb||!user||!timeLogCloudLoaded)return;
+  const missing=tasks.filter(t=>t&&t.id&&t.start_date&&(t.start_time||t.end_time)&&!(timeLogCache[String(t.id)]||[]).length);
+  for(const t of missing){
     try{
-      const r=await sb.from('work_time_logs').select('task_id,work_date,start_time,end_time').in('task_id',ids).order('work_date',{ascending:true});
-      if(!r.error){
-        // A successful cloud query is authoritative, including an empty result.
-        // Never mix stale device-local time rows into a successfully loaded cloud history.
-        (r.data||[]).forEach(x=>{
-          if(!timeLogCache[x.task_id])timeLogCache[x.task_id]=[];
-          timeLogCache[x.task_id].push(x);
-        });
-        Object.keys(timeLogCache).forEach(id=>timeLogCache[id].sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date))));
-        timeLogCloudLoaded=true;
-        return;
-      }
+      const payload={task_id:t.id,work_date:t.start_date,start_time:t.start_time||null,end_time:t.end_time||null,created_by:user.id,updated_at:new Date().toISOString()};
+      const r=await sb.from('work_time_logs').upsert(payload,{onConflict:'task_id,work_date'});
+      if(!r.error){if(!timeLogCache[String(t.id)])timeLogCache[String(t.id)]=[];timeLogCache[String(t.id)].push(payload);}
     }catch(_){}
-    await new Promise(res=>setTimeout(res,600*(attempt+1)));
   }
 }
+
 async function mobileRefreshIfNeeded(){
   if(!user||!sb)return;
-  if(Date.now()-lastFullSyncAt<5000)return;
+  if(Date.now()-lastFullSyncAt<15000)return;
   try{await loadAll();}catch(_){}
 }
 window.addEventListener('online',async()=>{try{await loadAll();}catch(_){}});
@@ -1007,18 +1032,10 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 window.addEventListener('pageshow',()=>mobileRefreshIfNeeded());
 function getTaskTimeEntries(t){
   const cloud=Array.isArray(timeLogCache[String(t?.id)])?timeLogCache[String(t.id)]:[];
-  const byDate={};
-  cloud.forEach(x=>{if(x.work_date)byDate[x.work_date]=x});
-  // Only use device-local history when the cloud time-log query was not available.
-  // If Supabase returned successfully (even with zero rows), cloud is authoritative.
-  if(!timeLogCloudLoaded){
-    getLocalTimeHistory(t?.id).forEach(x=>{if(x.work_date&&!byDate[x.work_date])byDate[x.work_date]=x});
-  }
-  if(!timeLogCloudLoaded && t?.start_date&&(t.start_time||t.end_time)&&!byDate[t.start_date]){
-    byDate[t.start_date]={work_date:t.start_date,start_time:t.start_time||null,end_time:t.end_time||null};
-  }
-  return Object.values(byDate).filter(x=>x.work_date).sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date)));
+  if(!timeLogCloudLoaded)return [];
+  return cloud.filter(x=>x&&x.work_date).slice().sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date))||String(a.start_time||'').localeCompare(String(b.start_time||'')));
 }
+
 function taskDisplayTime(t){
   const rows=getTaskTimeEntries(t);
   if(!rows.length)return '';
@@ -1237,13 +1254,13 @@ async function sendBackToInbox(id){
   populateCompletedMyWork();
 }
 async function startPicked(id){
-  const nowTime=new Date().toTimeString().slice(0,5);
-  const t=tasks.find(x=>x.id===id);
+  const nowTime=new Date().toTimeString().slice(0,5), t=tasks.find(x=>x.id===id);
   const r=await sb.from('tasks').update({workflow_status:'Working',status:'In Progress',start_time:nowTime}).eq('id',id);
   if(r.error){alert(r.error.message);return}
-  if(t)saveLocalTimeEntry(id,today,nowTime,null);
+  if(t){const lr=await sb.from('work_time_logs').upsert({task_id:id,work_date:today,start_time:nowTime,end_time:null,created_by:user.id,updated_at:new Date().toISOString()},{onConflict:'task_id,work_date'});if(lr.error){alert('Work started, but shared Work History could not be updated: '+lr.error.message);return;}}
   await loadTasks();renderMyWork();renderDashboard();
 }
+
 function openTaskFromWork(id){editTask(id)}
 let editingInboxTaskId=null;
 
@@ -1452,19 +1469,11 @@ $('taskForm').onsubmit=async e=>{
   // Preserve any old single Start/End pair as Day 1 before adding today's entry.
   if(existing)seedLegacyTaskTime(existing);
 
-  // Save immediately in browser history so it works even without the extra Supabase table.
+  // Shared Work History is written to Supabase first so every device sees the same record.
   if(taskId&&(startTime||endTime)){
+    const lr=await sb.from('work_time_logs').upsert({task_id:taskId,work_date:workDate,start_time:startTime,end_time:endTime,created_by:user.id,updated_at:new Date().toISOString()},{onConflict:'task_id,work_date'});
+    if(lr.error){msg('formMsg','Activity was not saved to shared Work History: '+lr.error.message,'error');return;}
     saveLocalTimeEntry(taskId,workDate,startTime,endTime);
-  }
-
-  // Also save to Supabase history table when that optional table exists.
-  if(taskId&&(startTime||endTime)){
-    try{
-      await sb.from('work_time_logs').upsert({
-        task_id:taskId,work_date:workDate,start_time:startTime,end_time:endTime,
-        created_by:user.id,updated_at:new Date().toISOString()
-      },{onConflict:'task_id,work_date'});
-    }catch(_){}
   }
 
   if(taskId)saveTaskFollowup(taskId,$('followUpDate')?.value||'',$('followUpPerson')?.value||'');
@@ -1572,30 +1581,30 @@ async function editTask(id){
 async function loadWorkTimeHistory(taskId){
   const box=$('workTimeHistory');if(!box)return;
   const t=tasks.find(x=>x.id===taskId);
-  if(t)seedLegacyTaskTime(t);
+  // Render the already-synchronised cloud cache immediately so the popup opens fast.
+  const cached=getTaskTimeEntries(t);
+  renderWorkHistoryRows(box,cached);
 
-  const byDate={};
-
-  // Optional cloud history.
+  // Refresh this task directly from Supabase in the background so mobile and desktop converge
+  // on the same shared database state even when the page was left open for some time.
+  if(!sb||!user)return;
   try{
-    const r=await sb.from('work_time_logs').select('*').eq('task_id',taskId).order('work_date',{ascending:false});
-    if(!r.error)(r.data||[]).forEach(x=>{byDate[x.work_date]=x});
-  }catch(_){}
-
-  // Browser history always available.
-  getLocalTimeHistory(taskId).forEach(x=>{
-    if(!byDate[x.work_date])byDate[x.work_date]=x;
-  });
-
-  // Final safety: show the task's legacy Start/End pair even if nothing else exists.
-  if(t&&t.start_date&&(t.start_time||t.end_time)&&!byDate[t.start_date]){
-    byDate[t.start_date]={work_date:t.start_date,start_time:t.start_time||null,end_time:t.end_time||null};
+    const r=await sb.from('work_time_logs').select('*').eq('task_id',taskId).order('work_date',{ascending:true}).order('start_time',{ascending:true});
+    if(r.error)throw r.error;
+    const rows=Array.isArray(r.data)?r.data:[];
+    timeLogCache[String(taskId)]=rows;
+    timeLogCloudLoaded=true;
+    renderWorkHistoryRows(box,rows);
+  }catch(e){
+    box.innerHTML='<div class="msg error">Shared Work History could not be refreshed. Please check the cloud connection.</div>';
   }
-
-  const rows=Object.values(byDate).sort((a,b)=>String(b.work_date).localeCompare(String(a.work_date)));
-
+}
+function renderWorkHistoryRows(box,rows){
+  if(!box)return;
+  const list=Array.isArray(rows)?rows.filter(x=>x&&x.work_date).slice():[];
+  list.sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date))||String(a.start_time||'').localeCompare(String(b.start_time||'')));
   box.className='time-history';
-  box.innerHTML=rows.length?rows.map((x,i)=>{
+  box.innerHTML=list.length?list.map((x,i)=>{
     let duration='-';
     if(x.start_time&&x.end_time){
       const [sh,sm]=String(x.start_time).slice(0,5).split(':').map(Number);
@@ -1603,14 +1612,10 @@ async function loadWorkTimeHistory(taskId){
       let mins=(eh*60+em)-(sh*60+sm);if(mins<0)mins+=1440;
       duration=`${Math.floor(mins/60)}h ${mins%60}m`;
     }
-    return `<div class="time-row">
-      <div><b>📅 ${esc(x.work_date||'-')}</b>${i===rows.length-1?' <span class="pill">First Day</span>':''}</div>
-      <div>Start: <b>${esc(String(x.start_time||'-').slice(0,5))}</b></div>
-      <div>End: <b>${esc(String(x.end_time||'-').slice(0,5))}</b></div>
-      <div><b>${esc(duration)}</b></div>
-    </div>`;
-  }).join(''):'<div class="small">No daily time entered yet. Enter today\'s Start Time and End Time, then click Update Activity.</div>';
+    return `<div class="time-row"><div><b>📅 ${esc(x.work_date||'-')}</b>${i===0?' <span class="pill">First Day</span>':''}</div><div>Start: <b>${esc(String(x.start_time||'-').slice(0,5))}</b></div><div>End: <b>${esc(String(x.end_time||'-').slice(0,5))}</b></div><div><b>${esc(duration)}</b></div></div>`;
+  }).join(''):'<div class="small">No daily time entered yet.</div>';
 }
+
 function createRevision(id){
   const t=tasks.find(x=>x.id===id);if(!t)return;
   $('editingId').value='';$('date').value=today;$('unit').value=t.unit;$('project').value=t.project;$('category').value=t.category;
@@ -1656,8 +1661,9 @@ $('completedTaskForm').onsubmit=async e=>{
   // The final completion day is also part of the work-time history.
   const finalDate=$('cDate').value||today, finalStart=$('cStart').value||null, finalEnd=$('cEnd').value||null;
   if(finalStart||finalEnd){
+    const lr=await sb.from('work_time_logs').upsert({task_id:id,work_date:finalDate,start_time:finalStart,end_time:finalEnd,created_by:user.id,updated_at:now},{onConflict:'task_id,work_date'});
+    if(lr.error){msg('completedFormMsg','Completion was not saved to shared Work History: '+lr.error.message,'error');return;}
     saveLocalTimeEntry(id,finalDate,finalStart,finalEnd);
-    try{await sb.from('work_time_logs').upsert({task_id:id,work_date:finalDate,start_time:finalStart,end_time:finalEnd,created_by:user.id,updated_at:now},{onConflict:'task_id,work_date'});}catch(_){}
   }
   msg('completedFormMsg','Work completed successfully and added to Completed Task List.','ok');
   clearCompletedForm();await loadTasks();populateCompletedMyWork();renderCompletedTasks();renderDashboard();renderMyWork();renderInbox();renderTasks();
@@ -1676,53 +1682,11 @@ function completedTaskHTML(t){
   <div class="actions"><button class="primary smallbtn" onclick="viewCompletedWorkHistory('${esc(t.id)}')">📋 Work History</button><button class="secondary smallbtn" onclick="reworkCompletedTask('${esc(t.id)}')">🔄 Rework</button><button class="secondary smallbtn" onclick="viewEditCompletedTask('${esc(t.id)}')">✏️ View / Edit</button></div><div id="givenby-edit-${esc(t.id)}"></div></div>`;
 }
 async function viewCompletedWorkHistory(id){
-  // Always use the current signed-in account's cloud task + cloud time-log data.
-  // Mobile PWA may restore its auth session a little later than desktop.
-  await waitForAuthenticatedSession(6);
-  let t=tasks.find(x=>String(x.id)===String(id));
-  let cloudTask=null;
-  for(let attempt=0;attempt<4;attempt++){
-    try{
-      if(sb&&user){
-        const tr=await sb.from('tasks').select('*').eq('id',id).maybeSingle();
-        if(!tr.error&&tr.data){cloudTask=tr.data;break;}
-      }
-    }catch(_){ }
-    await new Promise(res=>setTimeout(res,400*(attempt+1)));
-  }
-  if(cloudTask)t=cloudTask;
+  // Fast path: open the history immediately from the already-loaded task/cache/local data.
+  // Do not wait for auth retries or repeated Supabase requests before showing the popup.
+  const t=tasks.find(x=>String(x.id)===String(id));
   if(!t)return;
 
-  const byDate={};
-  let cloudLoaded=false;
-  for(let attempt=0;attempt<5;attempt++){
-    try{
-      if(sb&&user){
-        const r=await sb.from('work_time_logs').select('task_id,work_date,start_time,end_time,updated_at').eq('task_id',id).order('work_date',{ascending:true});
-        if(!r.error){
-          (r.data||[]).forEach(x=>{if(x.work_date)byDate[x.work_date]=x;});
-          cloudLoaded=true;
-          break;
-        }
-      }
-    }catch(_){ }
-    await new Promise(res=>setTimeout(res,400*(attempt+1)));
-  }
-
-  // Cloud history is authoritative whenever the query succeeds.
-  // Device-local history is used only when the cloud query itself is unavailable.
-  if(!cloudLoaded){
-    getLocalTimeHistory(id).forEach(x=>{if(x.work_date)byDate[x.work_date]=x;});
-    if(t.start_date&&(t.start_time||t.end_time)&&!byDate[t.start_date]){
-      byDate[t.start_date]={work_date:t.start_date,start_time:t.start_time||null,end_time:t.end_time||null};
-    }
-  }
-
-  const rows=Object.values(byDate).filter(x=>x.work_date).sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date)));
-  const minutes=rows.reduce((sum,x)=>sum+minutesBetween(x.start_time,x.end_time),0);
-  const validDays=rows.filter(x=>x.start_time&&x.end_time).length;
-  const firstDate=rows[0]?.work_date||t.start_date||'';
-  const completedDate=t.completed_at?t.completed_at.slice(0,10):(t.completed_date||'');
   const modal=document.createElement('div');
   modal.className='completed-history-modal';
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
@@ -1733,21 +1697,55 @@ async function viewCompletedWorkHistory(id){
     let m=(eh*60+em)-(sh*60+sm);if(m<0)m+=1440;
     return `${Math.floor(m/60)}h ${m%60}m`;
   };
-  modal.innerHTML=`<div class="completed-history-card">
-    <div class="completed-history-head"><h2>📋 Work History – ${escH(t.project||'-')}</h2><button class="completed-history-close" type="button">×</button></div>
-    <div class="completed-history-body">
-      <div class="meta"><b>${escH(t.unit||'-')}</b> • Given By: ${escH(t.assigned_by||t.given_by||'-')} • Revision: ${escH(t.revision_no??0)}<br>First Work Date: ${escH(reportDate(firstDate))} • Completed Date: ${escH(reportDate(completedDate||t.completed_at||''))}</div>
-      <div class="history-summary" style="margin-top:12px">
-        <div class="history-stat"><b>${validDays}</b>Working Days</div>
-        <div class="history-stat"><b>${formatMinutes(minutes)}</b>Total Hours</div>
-        <div class="history-stat"><b>${escH(reportDate(firstDate))}</b>First Date</div>
-        <div class="history-stat"><b>${escH(reportDate(completedDate||t.completed_at||''))}</b>Completed</div>
-      </div>
-      <table class="history-table"><thead><tr><th>Date</th><th>From</th><th>To</th><th>Hours</th></tr></thead><tbody>${rows.length?rows.map(x=>`<tr><td>${escH(reportDate(x.work_date||''))}</td><td>${escH(String(x.start_time||'-').slice(0,5))}</td><td>${escH(String(x.end_time||'-').slice(0,5))}</td><td><b>${escH(duration(x.start_time,x.end_time))}</b></td></tr>`).join(''):'<tr><td colspan="4">No daily working-time entries recorded.</td></tr>'}</tbody></table>
-      <div class="history-total">Total time spent on this work: ${formatMinutes(minutes)} across ${validDays} working day(s).</div>
-    </div></div>`;
-  modal.querySelector('.completed-history-close').onclick=()=>modal.remove();
+
+  const getRows=()=>{
+    const byDate={};
+    getTaskTimeEntries(t).forEach(x=>{if(x.work_date)byDate[x.work_date]=x;});
+    if(!Object.keys(byDate).length && t.start_date&&(t.start_time||t.end_time)){
+      byDate[t.start_date]={work_date:t.start_date,start_time:t.start_time||null,end_time:t.end_time||null};
+    }
+    return Object.values(byDate).filter(x=>x.work_date)
+      .sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date)));
+  };
+
+  const renderBody=(rows,loading=false)=>{
+    const minutes=rows.reduce((sum,x)=>sum+minutesBetween(x.start_time,x.end_time),0);
+    const validDays=rows.filter(x=>x.start_time&&x.end_time).length;
+    const firstDate=rows[0]?.work_date||t.start_date||'';
+    const completedDate=t.completed_at?t.completed_at.slice(0,10):(t.completed_date||'');
+    const statusText=loading?' <span class="small" style="opacity:.75">Updating…</span>':'';
+    modal.innerHTML=`<div class="completed-history-card">
+      <div class="completed-history-head"><h2>📋 Work History – ${escH(t.project||'-')}${statusText}</h2><button class="completed-history-close" type="button">×</button></div>
+      <div class="completed-history-body">
+        <div class="meta"><b>${escH(t.unit||'-')}</b> • Given By: ${escH(t.assigned_by||t.given_by||'-')} • Revision: ${escH(t.revision_no??0)}<br>First Work Date: ${escH(reportDate(firstDate))} • Completed Date: ${escH(reportDate(completedDate||t.completed_at||''))}</div>
+        <div class="history-summary" style="margin-top:12px">
+          <div class="history-stat"><b>${validDays}</b>Working Days</div>
+          <div class="history-stat"><b>${formatMinutes(minutes)}</b>Total Hours</div>
+          <div class="history-stat"><b>${escH(reportDate(firstDate))}</b>First Date</div>
+          <div class="history-stat"><b>${escH(reportDate(completedDate||t.completed_at||''))}</b>Completed</div>
+        </div>
+        <table class="history-table"><thead><tr><th>Date</th><th>From</th><th>To</th><th>Hours</th></tr></thead><tbody>${rows.length?rows.map(x=>`<tr><td>${escH(reportDate(x.work_date||''))}</td><td>${escH(String(x.start_time||'-').slice(0,5))}</td><td>${escH(String(x.end_time||'-').slice(0,5))}</td><td><b>${escH(duration(x.start_time,x.end_time))}</b></td></tr>`).join(''):'<tr><td colspan="4">No daily working-time entries recorded.</td></tr>'}</tbody></table>
+        <div class="history-total">Total time spent on this work: ${formatMinutes(minutes)} across ${validDays} working day(s).</div>
+      </div></div>`;
+    modal.querySelector('.completed-history-close').onclick=()=>modal.remove();
+  };
+
+  renderBody(getRows(),false);
   document.body.appendChild(modal);
+
+  // Refresh only this task's time logs in the background. The popup is never blocked by this request.
+  if(sb&&user){
+    try{
+      const r=await sb.from('work_time_logs').select('task_id,work_date,start_time,end_time,updated_at')
+        .eq('task_id',id).order('work_date',{ascending:true});
+      if(!r.error && modal.isConnected){
+        if(!timeLogCache[String(id)])timeLogCache[String(id)]=[];
+        timeLogCache[String(id)]=r.data||[];
+        timeLogCloudLoaded=true;
+        renderBody(getRows(),false);
+      }
+    }catch(_){/* keep the instantly displayed cached/local history */}
+  }
 }
 window.viewCompletedWorkHistory=viewCompletedWorkHistory;
 async function viewEditCompletedTask(id){
@@ -2154,6 +2152,21 @@ function calendarDateKey(v){
 function calendarWorkName(t){
   return 'Work';
 }
+// Return every calendar date covered by a Unit Visit, inclusive of departure and return dates.
+function calendarVisitDateKeys(v){
+  const dates=[];
+  const push=(x)=>{const d=calendarDateKey(x);if(d)dates.push(d)};
+  push(v?.departure_date);
+  (Array.isArray(v?.route_stops)?v.route_stops:[]).forEach(x=>push(x.date));
+  push(v?.return_date);
+  if(!dates.length)return [];
+  const startKey=dates.slice().sort()[0],endKey=dates.slice().sort().slice(-1)[0];
+  const start=new Date(startKey+'T00:00:00'),end=new Date(endKey+'T00:00:00');
+  if(Number.isNaN(start.getTime())||Number.isNaN(end.getTime())||end<start)return [startKey];
+  const out=[];let d=new Date(start),guard=0;
+  while(d<=end&&guard<3700){out.push(localISODate(d));d.setDate(d.getDate()+1);guard++;}
+  return out;
+}
 function smartHolidays(){try{return JSON.parse(localStorage.getItem('assistant_manager_holidays_v1')||'[]')}catch(_){return []}}
 function setSmartHolidays(a){localStorage.setItem('assistant_manager_holidays_v1',JSON.stringify(a||[]))}
 function addSmartHoliday(){const d=$('holidayDate')?.value,n=($('holidayName')?.value||'Holiday').trim();if(!d){alert('Select a holiday date.');return}let a=smartHolidays();const i=a.findIndex(x=>x.date===d);if(i>=0)a[i]={date:d,name:n||'Holiday'};else a.push({date:d,name:n||'Holiday'});a.sort((x,y)=>x.date.localeCompare(y.date));setSmartHolidays(a);if($('holidayDate'))$('holidayDate').value='';if($('holidayName'))$('holidayName').value='';renderCalendar();renderHolidayList()}
@@ -2162,10 +2175,10 @@ function renderHolidayList(){const b=$('holidayList');if(!b)return;const p=`${ca
 function renderCalendar(){
  const first=new Date(calYear,calMonth,1);$('calMonthTitle').textContent=first.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
  const monthPrefix=`${calYear}-${String(calMonth+1).padStart(2,'0')}-`;const monthTasks=tasks.filter(t=>calendarDateKey(t.start_date||t.received_date||t.completed_date||t.completed_at).startsWith(monthPrefix));
- const workByDate={},completedByDate={},visitByDate={};monthTasks.forEach(t=>{const d=calendarDateKey(t.start_date||t.received_date||t.completed_date||t.completed_at);if(d)(workByDate[d]||(workByDate[d]=[])).push(calendarWorkName(t));const cd=calendarDateKey(t.completed_at||t.completed_date);if(cd)completedByDate[cd]=true});
- getUnitVisits().forEach(v=>[v.departure_date,v.return_date].map(calendarDateKey).filter(Boolean).forEach(d=>{if(d.startsWith(monthPrefix))visitByDate[d]=true}));
+ const workByDate={},completedByDate={},visitByDate={},trainingByDate={};monthTasks.forEach(t=>{const d=calendarDateKey(t.start_date||t.received_date||t.completed_date||t.completed_at);if(d)(workByDate[d]||(workByDate[d]=[])).push(calendarWorkName(t));const cd=calendarDateKey(t.completed_at||t.completed_date);if(cd)completedByDate[cd]=true;const sub=reportSub(t);if(sub==='Training'){const td=calendarDateKey(t.completed_at||t.completed_date||t.start_date||t.received_date);if(td)(trainingByDate[td]||(trainingByDate[td]=[])).push(calendarWorkName(t));}});
+ getUnitVisits().forEach(v=>calendarVisitDateKeys(v).forEach(d=>{if(d.startsWith(monthPrefix))visitByDate[d]=true}));
  const leaveDates=new Set(leaves.filter(l=>calendarDateKey(l.leave_date).startsWith(monthPrefix)).map(l=>calendarDateKey(l.leave_date)).filter(Boolean));const holidayByDate={};smartHolidays().filter(x=>String(x.date).startsWith(monthPrefix)).forEach(x=>holidayByDate[x.date]=x.name||'Holiday');const activeDates=new Set(Object.keys(workByDate));
- const grid=$('monthCalendarGrid');let s='';const offset=first.getDay();for(let i=0;i<42;i++){const dayNum=i-offset+1,dateObj=new Date(calYear,calMonth,dayNum),iso=`${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;const muted=dateObj.getMonth()!==calMonth,names=workByDate[iso]||[],isActive=names.length>0,isLeave=leaveDates.has(iso),isToday=iso===today,isSunday=dateObj.getDay()===0,isHoliday=!!holidayByDate[iso],isCompleted=!!completedByDate[iso],isVisit=!!visitByDate[iso];let cls='calDay'+(muted?' muted':'')+(isActive?' activeDay':'')+(isLeave?' leaveDay':'')+(isHoliday?' holidayDay':'')+(isCompleted?' completedCalDay':'')+(isVisit?' unitVisitDay':'')+(isSunday?' weeklyOffDay':'')+(isToday?' todayDay':'');const labels=[];if(isSunday)labels.push('Weekly Off');if(isHoliday)labels.push('Holiday: '+holidayByDate[iso]);if(isLeave)labels.push('Leave');if(isVisit)labels.push('Unit Visit');if(isCompleted)labels.push('Completed Work');if(isActive)labels.push('Work');if(!labels.length)labels.push('Click to add work for '+iso);s+=`<div class="${cls}" onclick="addWorkFromCalendar('${iso}')" title="${esc(labels.join(' | '))}">${dateObj.getDate()}${isHoliday?'<span class="calDot" style="color:#c2410c">Holiday</span>':''}${isLeave?'<span class="calDot">Leave</span>':''}${isVisit?'<span class="calDot" style="color:#2563eb">Visit</span>':''}${isCompleted?'<span class="calDot" style="color:#16a34a">Done</span>':''}${isSunday?'<span class="calDot">Weekly Off</span>':''}</div>`}grid.innerHTML=s;$('activeDayCount').textContent=activeDates.size;$('leaveDayCount').textContent=leaveDates.size;renderHolidayList();const legend=$('.calLegend');if(legend)legend.innerHTML='<span>🟢 Work</span><span>🟡 Leave</span><span>🔴 Weekly Off</span><span>🟠 Holiday</span><span>🔵 Visit</span><span>✅ Completed</span><span>🔵 Today</span>'}
+ const grid=$('monthCalendarGrid');let s='';const offset=first.getDay();for(let i=0;i<42;i++){const dayNum=i-offset+1,dateObj=new Date(calYear,calMonth,dayNum),iso=`${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;const muted=dateObj.getMonth()!==calMonth,names=workByDate[iso]||[],trainingNames=trainingByDate[iso]||[],isActive=names.length>0,isLeave=leaveDates.has(iso),isToday=iso===today,isSunday=dateObj.getDay()===0,isHoliday=!!holidayByDate[iso],isCompleted=!!completedByDate[iso],isVisit=!!visitByDate[iso],isTraining=trainingNames.length>0;let cls='calDay'+(muted?' muted':'')+(isActive?' activeDay':'')+(isLeave?' leaveDay':'')+(isTraining?' trainingDay':'')+(isHoliday?' holidayDay':'')+(isCompleted?' completedCalDay':'')+(isVisit?' unitVisitDay':'')+(isSunday?' weeklyOffDay':'')+(isToday?' todayDay':'');const labels=[];if(isSunday)labels.push('W.O');if(isHoliday)labels.push('Holiday: '+holidayByDate[iso]);if(isLeave)labels.push('Leave');if(isVisit)labels.push('Visit');if(isTraining)labels.push('Training: '+trainingNames.join(', '));if(isCompleted)labels.push('Completed Work');if(isActive)labels.push('Work');if(!labels.length)labels.push('Click to add work for '+iso);s+=`<div class="${cls}" onclick="addWorkFromCalendar('${iso}')" title="${esc(labels.join(' | '))}">${dateObj.getDate()}${isHoliday?'<span class="calDot" style="color:#c2410c">Holiday</span>':''}${isLeave?'<span class="calDot">Leave</span>':''}${isVisit?'<span class="calDot" style="color:#2563eb">V</span>':''}${isTraining?'<span class="calDot" style="color:#6d28d9">T</span>':''}${isSunday?'<span class="calDot">W.O</span>':''}</div>`}grid.innerHTML=s;$('activeDayCount').textContent=activeDates.size;$('leaveDayCount').textContent=leaveDates.size;renderHolidayList();const legend=$('.calLegend');if(legend)legend.innerHTML='<span>🟢 Work</span><span>🟡 Leave</span><span>🟣 T</span><span>🔴 W.O</span><span>🟠 Holiday</span><span>🔵 V</span><span>✅ Completed</span><span>🔵 Today</span>'}
 
 function changeMonth(delta){
   calMonth+=delta;
@@ -2341,12 +2354,12 @@ async function loadUnitVisitsCloud(){
   if(!user||!sb)return getUnitVisits();
   try{
     const r=await sb.from('unit_visits').select('*').eq('created_by',user.id).order('departure_date',{ascending:false}).order('departure_time',{ascending:false});
-    if(r.error) { unitVisitsCloudReady=false; return getUnitVisits(); }
+    if(r.error) { unitVisitsCloudReady=false; return []; }
     unitVisitsCloudReady=true;
     const rows=Array.isArray(r.data)?r.data:[];
     setUnitVisits(rows);
     return rows;
-  }catch(_){unitVisitsCloudReady=false;return getUnitVisits();}
+  }catch(_){unitVisitsCloudReady=false;return [];}
 }
 async function saveUnitVisitCloud(row){
   if(!user||!sb)return false;
@@ -2363,20 +2376,120 @@ async function deleteUnitVisitCloud(id){
 }
 function uvDate(v){return reportDate(v)}
 function uvDuration(a,b){if(!a||!b)return '-';const start=new Date((a.date||'')+'T'+(a.time||'00:00'));const end=new Date((b.date||'')+'T'+(b.time||'00:00'));if(Number.isNaN(start.getTime())||Number.isNaN(end.getTime()))return '-';const m=Math.round((end-start)/60000);if(m<0)return '-';return formatMinutes(m)}
-function initUnitVisitForm(){if(!$('uvDepartureDate'))return;if(!$('uvDepartureDate').value)$('uvDepartureDate').value=today;if(!$('uvHomeUnit').value)$('uvHomeUnit').value='Tirunelveli Unit'}
-function clearUnitVisitForm(){const f=$('unitVisitForm');if(!f)return;f.reset();$('uvEditingId').value='';$('uvHomeUnit').value='Tirunelveli Unit';$('uvDepartureDate').value=today;$('uvSaveBtn').textContent='💾 Save Unit Visit';$('uvCancelBtn').classList.add('hidden');$('unitVisitMsg').innerHTML=''}
+function uvRawRoute(v){return Array.isArray(v?.route_stops)?v.route_stops:[]}
+function uvRoute(v){
+  const extras=uvRawRoute(v).filter(x=>x&&x.from&&x.to&&x.date);
+  const main={from:v?.from_unit||v?.home_unit||'Tirunelveli Unit',to:v?.visit_unit||'',date:v?.departure_date||'',time:v?.departure_time||''};
+  if(main.from&&main.to&&main.date){
+    const first=extras[0];
+    const sameFirst=first&&first.from===main.from&&first.to===main.to&&first.date===main.date;
+    return sameFirst?extras:[main,...extras];
+  }
+  return extras;
+}
+const UV_UNITS=['Tirunelveli Unit','Madurai Unit','Namakkal Unit','Karaikal Unit','Pollachi Unit','Mattaparai Unit','Salem Unit','Alangudi Unit','Head Office','Manalur Unit','Other Units'];
+function uvFillSelect(sel, selected='', exclude=''){
+  if(!sel)return;
+  const list=UV_UNITS.filter(u=>u!==exclude);
+  sel.innerHTML=list.map(u=>`<option value="${esc(u)}" ${u===selected?'selected':''}>${esc(u)}</option>`).join('');
+  if(selected && !list.includes(selected)) sel.value=list[0]||'';
+}
+function uvFillToUnit(to, from, selected=''){
+  if(!to)return;
+  const list=UV_UNITS.filter(u=>u!==from);
+  to.innerHTML=list.map(u=>`<option value="${esc(u)}" ${u===selected?'selected':''}>${esc(u)}</option>`).join('');
+  if(selected && !list.includes(selected)) to.value=list[0]||'';
+  if(!selected && list.length) to.value=list[0];
+}
+function uvApplyFromType(typeSel, fromSel, homeSel, toSel, preserveFrom=true){
+  const type=typeSel?.value||'home';
+  const home=homeSel?.value||'Tirunelveli Unit';
+  const old=preserveFrom?fromSel?.value:'';
+  if(type==='home'){
+    uvFillSelect(fromSel,home);
+    fromSel.value=home;
+  }else{
+    uvFillSelect(fromSel,old&&old!==home?old:'');
+    if(!fromSel.value) fromSel.value=UV_UNITS.find(u=>u!==home)||UV_UNITS[0];
+  }
+  uvFillToUnit(toSel,fromSel?.value,old&&old!==fromSel.value?old:'');
+}
+function uvSetupMainSelectors(){
+  const home=$('uvHomeUnit'),type=$('uvFromType'),from=$('uvFromUnit'),to=$('uvVisitUnit');
+  if(!home||!type||!from||!to)return;
+  const hv=home.value||'Tirunelveli Unit';
+  uvFillSelect(home,hv);
+  home.value=hv;
+  type.value=type.value||'home';
+  if(type.value==='home') uvFillSelect(from,hv);
+  else uvFillSelect(from,from.value||'');
+  if(type.value==='home') from.value=hv;
+  else if(!from.value) from.value=UV_UNITS.find(u=>u!==hv)||UV_UNITS[0];
+  uvFillToUnit(to,from.value,to.value||'');
+  type.onchange=()=>{uvApplyFromType(type,from,home,to,false);};
+  home.onchange=()=>{
+    if(type.value==='home'){uvFillSelect(from,home.value);from.value=home.value;}
+    else uvFillSelect(from,from.value||'');
+    uvFillToUnit(to,from.value,to.value||'');
+  };
+  from.onchange=()=>uvFillToUnit(to,from.value,to.value===from.value?'':to.value);
+}
+function renderUnitVisitLegs(legs){
+  const box=$('uvLegs');if(!box)return;const arr=Array.isArray(legs)?legs:[];
+  box.innerHTML=arr.map((x,i)=>{
+    const from=x.from||'';const to=x.to||'';const opts=UV_UNITS.filter(u=>u!==from);
+    return `<div class="grid" style="margin-top:8px;padding:8px;border:1px solid #dbe3ec;border-radius:8px;background:#fff">\
+<div><label>From Unit Type</label><select class="uvLegType"><option value="home">Home Unit</option><option value="other" selected>Other Unit</option></select></div>\
+<div><label>From Unit</label><select class="uvLegFrom">${UV_UNITS.map(u=>`<option value="${esc(u)}" ${u===from?'selected':''}>${esc(u)}</option>`).join('')}</select></div>\
+<div><label>To Unit</label><select class="uvLegTo">${opts.map(u=>`<option value="${esc(u)}" ${u===to?'selected':''}>${esc(u)}</option>`).join('')}</select></div>\
+<div><label>Travel Date</label><input type="date" class="uvLegDate" value="${esc(x.date||'')}"></div>\
+<div><label>Travel Time</label><input type="time" class="uvLegTime" value="${esc(x.time||'')}"></div>\
+<div style="grid-column:1/-1;text-align:right"><button type="button" class="secondary smallbtn" onclick="removeUnitVisitLeg(${i})">🗑️ Remove</button></div></div>`
+  }).join('');
+  box.querySelectorAll('.uvLegType').forEach(sel=>sel.addEventListener('change',()=>{
+    const g=sel.closest('.grid'),from=g.querySelector('.uvLegFrom'),to=g.querySelector('.uvLegTo');
+    const old=from.value;
+    if(sel.value==='home'){uvFillSelect(from,$('uvHomeUnit')?.value||'Tirunelveli Unit');from.value=$('uvHomeUnit')?.value||'Tirunelveli Unit';}
+    else {uvFillSelect(from,old);if(!from.value)from.value=UV_UNITS[0];}
+    uvFillToUnit(to,to.value,from.value);
+  }));
+  box.querySelectorAll('.uvLegFrom').forEach(sel=>sel.addEventListener('change',()=>{const g=sel.closest('.grid');const to=g.querySelector('.uvLegTo');uvFillToUnit(to,to.value===sel.value?'':to.value,sel.value)}));
+}
+function readUnitVisitLegs(){
+  const box=$('uvLegs');if(!box)return [];
+  return [...box.querySelectorAll('.grid')].map(g=>({from:g.querySelector('.uvLegFrom')?.value||'',to:g.querySelector('.uvLegTo')?.value||'',date:g.querySelector('.uvLegDate')?.value||'',time:g.querySelector('.uvLegTime')?.value||''})).filter(x=>x.from&&x.to&&x.date);
+}
+function addUnitVisitLeg(){
+  const existing=readUnitVisitLegs();
+  const main={from:$('uvFromUnit')?.value||$('uvHomeUnit')?.value||'Tirunelveli Unit',to:$('uvVisitUnit')?.value||'',date:$('uvDepartureDate')?.value||today,time:$('uvDepartureTime')?.value||''};
+  const last=existing.length?existing[existing.length-1]:main;
+  const next=UV_UNITS.find(u=>u!==last.to&&u!==last.from)||UV_UNITS[1];
+  existing.push({from:last.to||last.from,to:next,date:last.date||today,time:last.time||''});
+  renderUnitVisitLegs(existing);
+}
+function removeUnitVisitLeg(i){const a=readUnitVisitLegs();a.splice(i,1);renderUnitVisitLegs(a)}
+function initUnitVisitForm(){if(!$('uvDepartureDate'))return;if(!$('uvDepartureDate').value)$('uvDepartureDate').value=today;uvSetupMainSelectors();if($('uvLegs')&&!$('uvLegs').children.length)renderUnitVisitLegs([])}
+function clearUnitVisitForm(){const f=$('unitVisitForm');if(!f)return;f.reset();$('uvEditingId').value='';$('uvHomeUnit').value='Tirunelveli Unit';$('uvFromType').value='home';uvSetupMainSelectors();$('uvFromUnit').value='Tirunelveli Unit';uvFillToUnit($('uvVisitUnit'),'Tirunelveli Unit','');$('uvDepartureDate').value=today;$('uvSaveBtn').textContent='💾 Save Unit Visit';$('uvCancelBtn').classList.add('hidden');$('unitVisitMsg').innerHTML='';renderUnitVisitLegs([])}
 function cancelUnitVisitEdit(){clearUnitVisitForm()}
-function editUnitVisit(id){const v=getUnitVisits().find(x=>x.id===id);if(!v)return;showTab('unitVisit',document.querySelector('nav button[onclick*="unitVisit"]'));openFormPopupForTab('unitVisit');$('uvEditingId').value=v.id;$('uvHomeUnit').value=v.home_unit||'Tirunelveli Unit';$('uvVisitUnit').value=v.visit_unit||'Madurai Unit';$('uvPurpose').value=v.purpose||'';$('uvDepartureDate').value=v.departure_date||today;$('uvDepartureTime').value=v.departure_time||'';$('uvReturnDate').value=v.return_date||'';$('uvReturnTime').value=v.return_time||'';$('uvRemarks').value=v.remarks||'';$('uvSaveBtn').textContent='💾 Update Unit Visit';$('uvCancelBtn').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
-async function deleteUnitVisit(id){if(!confirm('Delete this Unit Visit record?'))return;setUnitVisits(getUnitVisits().filter(x=>x.id!==id));await deleteUnitVisitCloud(id);await loadUnitVisitsCloud();renderUnitVisits()}
-function renderUnitVisits(){const box=$('unitVisitList');if(!box)return;const q=($('unitVisitSearch')?.value||'').trim().toLowerCase();let a=getUnitVisits().filter(v=>!q||[v.home_unit,v.visit_unit,v.purpose,v.remarks,v.departure_date,v.return_date].filter(Boolean).join(' ').toLowerCase().includes(q));a.sort((x,y)=>String(y.departure_date||'').localeCompare(String(x.departure_date||''))||String(y.departure_time||'').localeCompare(String(x.departure_time||'')));box.innerHTML=a.length?a.map(v=>{const returned=!!(v.return_date&&v.return_time);const dur=returned?uvDuration({date:v.departure_date,time:v.departure_time},{date:v.return_date,time:v.return_time}):'-';return `<div class="task"><h3>🚗 ${esc(v.visit_unit||'-')} <span class="badge ${returned?'done':'progress'}">${returned?'Returned':'On Visit'}</span></h3><div class="meta"><b>From:</b> ${esc(v.home_unit||'Tirunelveli Unit')} • <b>Purpose:</b> ${esc(v.purpose||'-')}<br><b>Departure:</b> ${esc(uvDate(v.departure_date))} ${esc(v.departure_time||'')}<br><b>Return:</b> ${returned?esc(uvDate(v.return_date))+' '+esc(v.return_time):'Not returned'} • <b>Duration:</b> ${esc(dur)}${v.remarks?'<br>Remarks: '+esc(v.remarks):''}</div><div class="actions"><button class="secondary smallbtn" onclick="editUnitVisit('${esc(v.id)}')">✏️ Edit</button>${!returned?`<button class="primary smallbtn" onclick="markUnitVisitReturned('${esc(v.id)}')">🏠 Mark Returned</button>`:''}<button class="secondary smallbtn" onclick="deleteUnitVisit('${esc(v.id)}')">🗑️ Delete</button></div></div>`}).join(''):'<p>No Unit Visit records.</p>'}
-async function markUnitVisitReturned(id){const a=getUnitVisits();const v=a.find(x=>x.id===id);if(!v)return;const now=new Date();v.return_date=localISODate(now);v.return_time=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');v.updated_at=now.toISOString();setUnitVisits(a);await saveUnitVisitCloud(v);await loadUnitVisitsCloud();renderUnitVisits()}
-$('unitVisitForm').onsubmit=async e=>{e.preventDefault();const a=getUnitVisits();const id=$('uvEditingId').value||('uv_'+Date.now()+'_'+Math.random().toString(36).slice(2,8));const row={id,home_unit:'Tirunelveli Unit',visit_unit:$('uvVisitUnit').value,purpose:$('uvPurpose').value.trim(),departure_date:$('uvDepartureDate').value,departure_time:$('uvDepartureTime').value,return_date:$('uvReturnDate').value||'',return_time:$('uvReturnTime').value||'',remarks:$('uvRemarks').value.trim(),updated_at:new Date().toISOString(),created_by:user?.id||null};const i=a.findIndex(x=>x.id===id);if(i>=0)a[i]=row;else{row.created_at=new Date().toISOString();a.push(row)}setUnitVisits(a);const cloud=await saveUnitVisitCloud(row);await loadUnitVisitsCloud();renderUnitVisits();clearUnitVisitForm();$('unitVisitMsg').innerHTML=cloud?'<div class="msg ok">Unit Visit saved and synced to PWA.</div>':'<div class="msg ok">Unit Visit saved locally. Supabase sync is unavailable until the unit_visits table is created.</div>'};
+function editUnitVisit(id){
+  const v=getUnitVisits().find(x=>x.id===id);if(!v)return;showTab('unitVisit',document.querySelector('nav button[onclick*="unitVisit"]'));openFormPopupForTab('unitVisit');$('uvEditingId').value=v.id;$('uvHomeUnit').value=v.home_unit||'Tirunelveli Unit';uvSetupMainSelectors();
+  const route=uvRoute(v),first=route[0]||{};
+  const from=first.from||v.from_unit||v.home_unit||'Tirunelveli Unit',to=first.to||v.visit_unit||'Madurai Unit';
+  $('uvFromType').value=from===(v.home_unit||'Tirunelveli Unit')?'home':'other';uvSetupMainSelectors();$('uvFromUnit').value=from;uvFillToUnit($('uvVisitUnit'),from,to);$('uvPurpose').value=v.purpose||'';$('uvDepartureDate').value=first.date||v.departure_date||today;$('uvDepartureTime').value=first.time||v.departure_time||'';$('uvReturnDate').value=v.return_date||'';$('uvReturnTime').value=v.return_time||'';$('uvRemarks').value=v.remarks||'';$('uvSaveBtn').textContent='💾 Update Unit Visit';$('uvCancelBtn').classList.remove('hidden');renderUnitVisitLegs(route.slice(1));window.scrollTo({top:0,behavior:'smooth'})
+}
+async function deleteUnitVisit(id){if(!confirm('Delete this Unit Visit record?'))return;if(!(await deleteUnitVisitCloud(id))){alert('Unit Visit could not be deleted from the shared database.');return;}await loadUnitVisitsCloud();renderUnitVisits()}
+function renderUnitVisits(){const box=$('unitVisitList');if(!box)return;const q=($('unitVisitSearch')?.value||'').trim().toLowerCase();let a=getUnitVisits().filter(v=>!q||[v.home_unit,v.visit_unit,v.purpose,v.remarks,v.departure_date,v.return_date,...uvRoute(v).flatMap(x=>[x.from,x.to,x.date])].filter(Boolean).join(' ').toLowerCase().includes(q));a.sort((x,y)=>String(y.departure_date||'').localeCompare(String(x.departure_date||''))||String(y.departure_time||'').localeCompare(String(x.departure_time||'')));box.innerHTML=a.length?a.map(v=>{const route=uvRoute(v).reduce((acc,x)=>{if(!acc.length)acc.push(x.from);if(acc[acc.length-1]!==x.from)acc.push(x.from);if(acc[acc.length-1]!==x.to)acc.push(x.to);return acc},[]).filter(Boolean);const returned=!!(v.return_date&&v.return_time);const lastDate=uvRoute(v).length?uvRoute(v)[uvRoute(v).length-1].date:v.departure_date;const lastTime=uvRoute(v).length?uvRoute(v)[uvRoute(v).length-1].time:v.departure_time;const dur=returned?uvDuration({date:v.departure_date,time:v.departure_time},{date:v.return_date,time:v.return_time}):'-';return `<div class="task"><h3>🚗 ${esc(route[route.length-1]||'-')} <span class="badge ${returned?'done':'progress'}">${returned?'Returned':'On Visit'}</span></h3><div class="meta"><b>Home Unit:</b> ${esc(v.home_unit||'Tirunelveli Unit')} • <b>From Unit:</b> ${esc(v.from_unit||v.home_unit||'Tirunelveli Unit')}<br><b>Route:</b> ${esc(route.join(' → '))}<br><b>Purpose:</b> ${esc(v.purpose||'-')}<br><b>Departure:</b> ${esc(uvDate(v.departure_date))} ${esc(v.departure_time||'')}<br>${uvRoute(v).length?`<b>Next Travel:</b> ${uvRoute(v).map(x=>`${esc(x.from)} → ${esc(x.to)} (${esc(uvDate(x.date))} ${esc(x.time||'')})`).join('<br>') }<br>`:''}<b>Return:</b> ${returned?esc(uvDate(v.return_date))+' '+esc(v.return_time):'Not returned'} • <b>Duration:</b> ${esc(dur)}${v.remarks?'<br>Remarks: '+esc(v.remarks):''}</div><div class="actions"><button class="secondary smallbtn" onclick="editUnitVisit('${esc(v.id)}')">✏️ Edit</button>${!returned?`<button class="primary smallbtn" onclick="markUnitVisitReturned('${esc(v.id)}')">🏠 Mark Returned</button>`:''}<button class="secondary smallbtn" onclick="deleteUnitVisit('${esc(v.id)}')">🗑️ Delete</button></div></div>`}).join(''):'<p>No Unit Visit records.</p>'}
+async function markUnitVisitReturned(id){const a=getUnitVisits();const v=a.find(x=>x.id===id);if(!v)return;const now=new Date();const updated={...v,return_date:localISODate(now),return_time:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),updated_at:now.toISOString()};if(!(await saveUnitVisitCloud(updated))){alert('Return update could not be saved to the shared database.');return;}await loadUnitVisitsCloud();renderUnitVisits()}
+async function saveUnitVisitCloudSafe(row){if(!user||!sb)return false;return await saveUnitVisitCloud(row)}
+$('unitVisitForm').onsubmit=async e=>{e.preventDefault();const a=getUnitVisits();const id=$('uvEditingId').value||('uv_'+Date.now()+'_'+Math.random().toString(36).slice(2,8));const extraRoute=readUnitVisitLegs();const firstLeg={from:$('uvFromUnit').value,to:$('uvVisitUnit').value,date:$('uvDepartureDate').value,time:$('uvDepartureTime').value};const route=[firstLeg,...extraRoute].filter(x=>x.from&&x.to&&x.date);const row={id,home_unit:$('uvHomeUnit').value,from_unit:firstLeg.from,visit_unit:firstLeg.to,purpose:$('uvPurpose').value.trim(),departure_date:firstLeg.date,departure_time:firstLeg.time,return_date:$('uvReturnDate').value||'',return_time:$('uvReturnTime').value||'',remarks:$('uvRemarks').value.trim(),route_stops:route,updated_at:new Date().toISOString(),created_by:user?.id||null};const i=a.findIndex(x=>x.id===id);if(i>=0)a[i]=row;else{row.created_at=new Date().toISOString();a.push(row)}const cloud=await saveUnitVisitCloudSafe(row);if(!cloud){alert('Unit Visit could not be saved to the shared database. Please check the connection and try again.');return;}await loadUnitVisitsCloud();renderUnitVisits();clearUnitVisitForm();$('unitVisitMsg').innerHTML='<div class="msg ok">Unit Visit saved and synced to shared database.</div>'};
   // Expose Unit Visit state/handlers because calendar, backup and cards call these from outside this IIFE.
   window.getUnitVisits=getUnitVisits;
   window.setUnitVisits=setUnitVisits;
   window.initUnitVisitForm=initUnitVisitForm;
   window.clearUnitVisitForm=clearUnitVisitForm;
   window.cancelUnitVisitEdit=cancelUnitVisitEdit;
+  window.addUnitVisitLeg=addUnitVisitLeg;
+  window.removeUnitVisitLeg=removeUnitVisitLeg;
   window.editUnitVisit=editUnitVisit;
   window.deleteUnitVisit=deleteUnitVisit;
   window.renderUnitVisits=renderUnitVisits;
